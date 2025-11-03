@@ -1,20 +1,20 @@
 ---
 # Display name
-title: Alex Johnson
+title: Markus Leipe
 
 # Name pronunciation (optional)
 name_pronunciation: ''
 
 # Full name (for SEO)
-first_name: Alex
-last_name: Johnson
+first_name: Markus
+last_name: Leipe
 
 # Pronouns (optional)
-pronouns: he/him
+pronouns: ''
 
 # Status emoji
 status:
-  icon: 🚀
+  icon: 
 
 # Is this the primary user of the site?
 superuser: true
@@ -23,12 +23,12 @@ superuser: true
 highlight_name: true
 
 # Role/position/tagline
-role: Senior AI Research Scientist
+role: PhD student, Quantum Communication
 
 # Organizations/Affiliations to display in Biography blox
 organizations:
-  - name: Meta AI
-    url: https://ai.meta.com/
+  - name: Fraunhofer IOF, Friedrich Schiller University Jena, Max Planck School of Photonics
+    url: https://www.iof.fraunhofer.de/en/competences/photonicquantumsystems.html
 
 # Social network links
 # Need to use another icon? Simply download the SVG icon to your `assets/media/icons/` folder.
@@ -48,10 +48,10 @@ profiles:
     url: https://orcid.org/0000-0002-1825-0097
 
 interests:
-  - Large Language Models
-  - Computer Vision
-  - Reinforcement Learning
-  - AI Ethics
+  - Satellite & Free-Space Quantum Communication
+  - Gen-AI in Science
+  - Cello
+  - Distance Running
 
 education:
   - area: PhD Computer Science (AI Focus)
