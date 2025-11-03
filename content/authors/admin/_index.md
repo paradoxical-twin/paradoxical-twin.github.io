@@ -61,7 +61,7 @@ education:
     date_end: 2022-10-30
     summary: |
       Final grade 1.2. Final thesis supervised by Prof. Andreas Tünnermann and Prof. Fabian Steinlechner
-  - area: B.Sc. 
+  - area: B.Sc. Physics
     institution: FSU Jena
     icon: ""
     date_start: 2016-10-01
