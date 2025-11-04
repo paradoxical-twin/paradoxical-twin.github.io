@@ -11,9 +11,9 @@ main:
     url: /#papers
     weight: 11
   - name: Blog
-    url: /#blog
+    url: /blog/
     weight: 12
   - name: Reading
-    url: /#reading
+    url: /reading/
     weight: 13
 

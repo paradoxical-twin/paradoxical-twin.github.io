@@ -62,29 +62,4 @@ sections:
         exclude_featured: false
     design:
       view: citation
-  - block: markdown
-    id: blog
-    content:
-      title: '📝 Blog'
-      subtitle: ''
-      text: |-
-        **Check back soon!** 
-        
-        I'm working on some interesting content. Stay tuned!
-    design:
-      columns: '1'
-  - block: markdown
-    id: reading
-    content:
-      title: '📖 Reading'
-      subtitle: ''
-      text: |-
-        Here are some books I've been reading recently:
-        
-        **The Quantum Internet** by Nicolas Gisin
-        - A fascinating exploration of quantum communication networks and their potential applications. Great introduction to the concepts I'm working on in my research.
-        
-        *More books coming soon...*
-    design:
-      columns: '1'
 ---
