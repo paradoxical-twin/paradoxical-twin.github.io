@@ -34,21 +34,22 @@ organizations:
 # Need to use another icon? Simply download the SVG icon to your `assets/media/icons/` folder.
 profiles:
   - icon: at-symbol
-    url: 'mailto:alex.johnson@meta.com'
+    url: 'markus.leipe@googlemail.com'
     label: E-mail Me
   - icon: brands/x
-    url: https://twitter.com/AlexAIResearch
+    url: https://x.com/MarkusLeipe
   - icon: brands/github
-    url: https://github.com/alexjohnsonai
+    url: https://github.com/paradoxical-twin
   - icon: brands/linkedin
-    url: https://www.linkedin.com/in/alexjohnsonai/
+    url: https://www.linkedin.com/in/markus-leipe-24b9b7246/
   - icon: academicons/google-scholar
-    url: https://scholar.google.com/citations?user=alexjohnson
+    url: https://scholar.google.com/citations?user=0hHDxngAAAAJ&h
   - icon: academicons/orcid
-    url: https://orcid.org/0000-0002-1825-0097
+    url: https://orcid.org/0009-0001-3820-5541
 
 interests:
   - Satellite & Free-Space Quantum Communication
+  - Entangled Photon Pair Sources
   - Gen-AI in Science
   - Cello
   - Distance Running
@@ -72,7 +73,7 @@ education:
 work:
   - position: PhD student
     company_name: Fraunhofer IOF, FSU Jena & Max Planck School of Photonics
-    company_url: 'https://ai.meta.com/'
+    company_url: 'https://www.iof.fraunhofer.de/'
     icon: ''
     date_start: 2023-02-01
     date_end: ''
@@ -85,18 +86,15 @@ work:
 skills:
   - name: Technical Skills
     items:
-      - name: Python & PyTorch
+      - name: Python 
         description: ''
-        percent: 95
+        percent: 80
         icon: code-bracket
-      - name: Machine Learning
+      - name: Optical Alignment
         description: ''
         percent: 100
-        icon: chart-bar
-      - name: Cloud Computing (AWS/GCP)
-        description: ''
-        percent: 85
-        icon: cloud
+        icon: 
+
   - name: Hobbies
     color: '#eeac02'
     color_border: '#f0bf23'
