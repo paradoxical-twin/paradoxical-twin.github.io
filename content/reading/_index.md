@@ -14,30 +14,50 @@ sections:
       text: |-
         Here I'll be keeping a list of books I've been enjoying or at least found valuable over the recent years, with comments sometimes. In no particular order.
         
-        **The Years of Lyndon Johnson, Books 1-4** by Robert A. Caro
-        - Just amazing. I distrust how poetic some of the characterizations feel, but I can't wait for the last book.
+        **The Years of Lyndon Johnson, Books 1-4** by Robert A. Caro  
+        Just amazing. I distrust how poetic some of the characterizations feel, but I can't wait for the last book.
+        
         **The Power Broker** by Robert A. Caro
+        
         **One Hundred Years of Solitude** by Gabriel Garcia Marquez
+        
         **Anna Karenina** by Lev Tolstoy
+        
         **Grand Strategies** by Charles Hill
+        
         **Lost in Math** by Sabine Hossenfelder
+        
         **The Stormlight Archive, Books 1-5** by Brandon Sanderson
-        **The Bible** 
-        **The Three-Body Problem** by Cixin Liu
-        - as great as everybody says it is. 
+        
+        **The Bible**
+        
+        **The Three-Body Problem** by Cixin Liu  
+        As great as everybody says it is.
+        
         **The Dark Forest** and **Death's End** by Cixin Liu
+        
         **Moral Mazes** by Robert Jackall
+        
         **Dear Reader** by Michael Malice
+        
         **Letters to a Young Contrarian** by Christopher Hitchens
+        
         **Collapse** by Valdislav M. Zubok
+        
         **Seeing Like a State** by James C. Scott
+        
         **A Fire Upon The Deep** by Vernor Vinge
+        
         **Thinking, Fast and Slow** by Daniel Kahneman
-        **Gödel, Escher, Bach** by Douglas Hofstadter
-        - Did not finish it first time reading it. Meaning to go back to it for ages now, with what we learned since the Transformer. One day.
-        **1984** by George Orwell**
-        **A History of Chinese Civilization** by Jacques Gernet
-        - A bit too dense for what I would have needed at that point. I am still looking for books to get a better grip on ancient and imperial China.
+        
+        **Gödel, Escher, Bach** by Douglas Hofstadter  
+        Did not finish it first time reading it. Meaning to go back to it for ages now, with what we learned since the Transformer. One day.
+        
+        **1984** by George Orwell
+        
+        **A History of Chinese Civilization** by Jacques Gernet  
+        A bit too dense for what I would have needed at that point. I am still looking for books to get a better grip on ancient and imperial China.
+        
         **Unsong** by Scott Alexander
 
     design:
