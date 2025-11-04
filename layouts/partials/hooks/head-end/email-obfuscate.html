@@ -1,0 +1,16 @@
+<script>
+  // Email obfuscation - convert [at] and [dot] to proper email format
+  document.addEventListener('DOMContentLoaded', function() {
+    // Find all mailto links with obfuscated emails
+    const emailLinks = document.querySelectorAll('a[href^="mailto:"]');
+    emailLinks.forEach(function(link) {
+      let href = link.getAttribute('href');
+      if (href.includes('[at]') || href.includes('[dot]')) {
+        // Replace [at] with @ and [dot] with .
+        href = href.replace(/\[at\]/g, '@').replace(/\[dot\]/g, '.');
+        link.setAttribute('href', href);
+      }
+    });
+  });
+</script>
+

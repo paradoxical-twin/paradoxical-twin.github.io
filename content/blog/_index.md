@@ -12,9 +12,9 @@ sections:
       title: '📝 Blog'
       subtitle: ''
       text: |-
-        **Check back soon!** 
+        **Work in progress!** 
         
-        I'm working on some interesting content. Stay tuned!
+        I'll be back. One day.
     design:
       columns: '1'
 ---

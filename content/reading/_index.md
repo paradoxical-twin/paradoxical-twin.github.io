@@ -12,12 +12,20 @@ sections:
       title: '📖 Reading'
       subtitle: ''
       text: |-
-        Here are some books I've been reading recently:
+        Here I'll be keeping a list of books I've been enjoying over the recent years, with comments sometimes. 
         
-        **The Quantum Internet** by Nicolas Gisin
-        - A fascinating exploration of quantum communication networks and their potential applications. Great introduction to the concepts I'm working on in my research.
+        **The Years of Lyndon Johnson, Books 1-4** by Robert A. Caro
+        - Just amazing. 
+        **The Power Broker** by Robert A. Caro
+        **One Hundred Years of Solitude** by Gabriel Garcia Marquez
+        **Anna Karenina** by Lev Tolstoy
+        **Grand Strategies** by Charles Hill
+        **Lost in Math** by Sabine Hossenfelder
+        **The Stormlight Archive, Books 1-5** by Brandon Sanderson
+        **The Bible** 
         
-        *More books coming soon...*
+        
+        
     design:
       columns: '1'
 ---
