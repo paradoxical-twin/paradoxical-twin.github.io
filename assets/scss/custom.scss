@@ -1,0 +1,353 @@
+/* Minimalist Design Overrides for Hugo Blox */
+
+/* ============================================
+   REMOVE GRADIENTS & DECORATIVE BACKGROUNDS
+   ============================================ */
+
+.hbx-bg-gradient,
+.bg-gradient,
+[class*="gradient"] {
+  background: var(--hb-color-background) !important;
+  background-image: none !important;
+}
+
+/* Remove background patterns and decorations */
+body::before,
+body::after,
+section::before,
+section::after,
+.decoration,
+[class*="decoration"] {
+  display: none !important;
+}
+
+/* ============================================
+   REMOVE ROUNDED CORNERS
+   ============================================ */
+
+.card,
+.rounded,
+.rounded-lg,
+.rounded-md,
+.rounded-sm,
+.rounded-xl,
+.rounded-2xl,
+.rounded-3xl,
+.rounded-full,
+[class*="rounded"],
+img,
+.avatar,
+.avatar img,
+button,
+.btn,
+input,
+textarea,
+select,
+pre,
+code {
+  border-radius: 0 !important;
+}
+
+/* ============================================
+   CLEAN AVATAR STYLING
+   ============================================ */
+
+.avatar,
+.avatar img {
+  border: 1px solid var(--hb-color-text-muted) !important;
+}
+
+/* ============================================
+   MINIMAL BUTTONS
+   ============================================ */
+
+.btn,
+button,
+[role="button"],
+.btn-primary,
+.btn-secondary {
+  border-radius: 0 !important;
+  background: transparent !important;
+  border: 1px solid var(--hb-color-text) !important;
+  color: var(--hb-color-text) !important;
+  padding: 0.5rem 1.25rem !important;
+  font-weight: 400 !important;
+  transition: all 0.15s ease !important;
+  box-shadow: none !important;
+}
+
+.btn:hover,
+button:hover,
+[role="button"]:hover {
+  background: var(--hb-color-text) !important;
+  color: var(--hb-color-background) !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+/* ============================================
+   TYPOGRAPHY
+   ============================================ */
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji" !important;
+  line-height: 1.6 !important;
+  letter-spacing: -0.003em !important;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 600 !important;
+  letter-spacing: -0.02em !important;
+  line-height: 1.2 !important;
+}
+
+h1 {
+  font-size: 2rem !important;
+}
+
+h2 {
+  font-size: 1.5rem !important;
+}
+
+h3 {
+  font-size: 1.25rem !important;
+}
+
+/* ============================================
+   REMOVE BOX SHADOWS - FLAT DESIGN
+   ============================================ */
+
+.card,
+.shadow,
+.shadow-sm,
+.shadow-md,
+.shadow-lg,
+.shadow-xl,
+[class*="shadow"],
+.navbar,
+.article-grid .card {
+  box-shadow: none !important;
+}
+
+.card {
+  border: 1px solid var(--hb-color-border) !important;
+  background: var(--hb-color-background) !important;
+}
+
+/* ============================================
+   CLEAN NAVIGATION
+   ============================================ */
+
+.navbar {
+  border-bottom: 1px solid var(--hb-color-border) !important;
+  background: var(--hb-color-background) !important;
+  padding-top: 1rem !important;
+  padding-bottom: 1rem !important;
+}
+
+.navbar-brand {
+  font-weight: 600 !important;
+  font-size: 1rem !important;
+}
+
+.nav-link {
+  font-weight: 400 !important;
+  color: var(--hb-color-text-muted) !important;
+  transition: color 0.15s ease !important;
+}
+
+.nav-link:hover,
+.nav-link.active {
+  color: var(--hb-color-text) !important;
+}
+
+/* ============================================
+   ARTICLE GRID
+   ============================================ */
+
+.article-grid .card {
+  border: 1px solid var(--hb-color-border) !important;
+  background: var(--hb-color-background) !important;
+  transition: border-color 0.15s ease !important;
+  padding: 1.5rem !important;
+}
+
+.article-grid .card:hover {
+  border-color: var(--hb-color-text) !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.article-grid .card-img-top {
+  border-bottom: 1px solid var(--hb-color-border) !important;
+  margin-bottom: 1rem !important;
+}
+
+/* ============================================
+   CLEAN LINKS
+   ============================================ */
+
+a {
+  color: var(--hb-color-text) !important;
+  text-decoration: none !important;
+  border-bottom: 1px solid transparent !important;
+  transition: border-color 0.15s ease !important;
+}
+
+a:hover {
+  border-bottom-color: var(--hb-color-text) !important;
+  text-decoration: none !important;
+}
+
+/* Don't underline image links */
+a:has(img) {
+  border-bottom: none !important;
+}
+
+/* ============================================
+   CLEAN FOOTER
+   ============================================ */
+
+footer {
+  border-top: 1px solid var(--hb-color-border) !important;
+  background: var(--hb-color-background) !important;
+  padding: 2rem 0 !important;
+  margin-top: 4rem !important;
+}
+
+/* ============================================
+   FORMS
+   ============================================ */
+
+input,
+textarea,
+select,
+.form-control {
+  border-radius: 0 !important;
+  border: 1px solid var(--hb-color-border) !important;
+  background: var(--hb-color-background) !important;
+  padding: 0.5rem 0.75rem !important;
+  transition: border-color 0.15s ease !important;
+}
+
+input:focus,
+textarea:focus,
+select:focus,
+.form-control:focus {
+  border-color: var(--hb-color-text) !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* ============================================
+   CODE BLOCKS
+   ============================================ */
+
+pre,
+code {
+  border-radius: 0 !important;
+  border: 1px solid var(--hb-color-border) !important;
+}
+
+pre {
+  background: var(--hb-color-surface) !important;
+  padding: 1rem !important;
+}
+
+code {
+  background: var(--hb-color-surface) !important;
+  padding: 0.2em 0.4em !important;
+}
+
+/* ============================================
+   CONTAINER & SPACING
+   ============================================ */
+
+.container,
+.container-fluid {
+  max-width: 800px !important;
+}
+
+/* Reduce excessive padding */
+.section-padding {
+  padding: 2rem 0 !important;
+}
+
+/* ============================================
+   BIOGRAPHY SECTION
+   ============================================ */
+
+.resume-biography,
+.resume-biography-3 {
+  background: transparent !important;
+  border: none !important;
+}
+
+.biography-text {
+  line-height: 1.6 !important;
+}
+
+/* ============================================
+   SOCIAL ICONS
+   ============================================ */
+
+.social-icons a {
+  border: none !important;
+  opacity: 0.6 !important;
+  transition: opacity 0.15s ease !important;
+}
+
+.social-icons a:hover {
+  opacity: 1 !important;
+  border: none !important;
+  transform: none !important;
+}
+
+/* ============================================
+   CITATION VIEW
+   ============================================ */
+
+.view-citation .article-metadata {
+  font-size: 0.875rem !important;
+  color: var(--hb-color-text-muted) !important;
+}
+
+.view-citation article {
+  border-bottom: 1px solid var(--hb-color-border) !important;
+  padding: 1.5rem 0 !important;
+  margin-bottom: 0 !important;
+}
+
+/* ============================================
+   REMOVE ANIMATIONS & TRANSITIONS
+   ============================================ */
+
+* {
+  animation: none !important;
+  transition-duration: 0.15s !important;
+}
+
+/* ============================================
+   SEARCH
+   ============================================ */
+
+.search-results {
+  border: 1px solid var(--hb-color-border) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+/* ============================================
+   TAGS
+   ============================================ */
+
+.badge,
+.tag,
+[class*="badge"] {
+  border-radius: 0 !important;
+  border: 1px solid var(--hb-color-border) !important;
+  background: transparent !important;
+  color: var(--hb-color-text-muted) !important;
+  font-weight: 400 !important;
+  padding: 0.25rem 0.5rem !important;
+}

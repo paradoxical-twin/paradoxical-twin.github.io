@@ -5,8 +5,8 @@
 
 # Appearance
 appearance:
-  mode: system
-  color: zinc
+  mode: light
+  color: slate
 
 # SEO
 marketing:
@@ -33,7 +33,7 @@ header:
     block: 'navbar'
     fixed_to_top: true
     show_search: true
-    show_theme_chooser: true
+    show_theme_chooser: false
     logo:
       text: 'Markus Leipe'
 
