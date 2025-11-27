@@ -6,7 +6,7 @@ type: landing
 
 design:
   # Default section spacing
-  spacing: '6rem'
+  spacing: '3rem'
 
 sections:
   - block: resume-biography-3
@@ -23,15 +23,15 @@ sections:
         education: ''
         interests: ''
     design:
-      # Apply a gradient background
-      css_class: hbx-bg-gradient
+      # Clean, minimal design
+      css_class: ''
       # Avatar customization
       avatar:
-        size: medium # Options: small (150px), medium (200px, default), large (320px), xl (400px), xxl (500px)
-        shape: circle # Options: circle (default), square, rounded
+        size: small # Options: small (150px), medium (200px, default), large (320px), xl (400px), xxl (500px)
+        shape: square # Options: circle (default), square, rounded
   - block: markdown
     content:
-      title: '📚 My Research'
+      title: 'Research'
       subtitle: ''
       text: |-
         I am working on scaling the reach of Quantum Communication to intercontinental distances. This includes running free-space link experiments on our in-house, adaptive-optics enhanced 1.7 km link, building ultrabright entangled pair sources, high-performance analysis equipment, or simulation tools for satellite-based QC. 
