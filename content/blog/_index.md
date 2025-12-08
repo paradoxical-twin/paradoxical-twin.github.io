@@ -7,14 +7,16 @@ design:
   spacing: '5rem'
 
 sections:
-  - block: markdown
+  - block: collection
     content:
       title: '📝 Blog'
-      subtitle: ''
-      text: |-
-        **Work in progress!** 
-        
-        I'll be back. One day.
+      filters:
+        folders:
+          - blog
     design:
-      columns: '1'
+      view: article-list
+      show_date: true
+      show_read_time: true
+      show_read_more: true
+      columns: 1
 ---
