@@ -12,7 +12,7 @@ sections:
       title: '📖 Reading'
       subtitle: ''
       text: |-
-        Here I'll be keeping a list of books I've been enjoying or at least found valuable over the recent years, with comments sometimes. In no particular order.
+        A list of books I've been enjoying or at least found valuable over the recent years, with comments sometimes. In no particular order.
         
         **The Years of Lyndon Johnson, Books 1-4** by Robert A. Caro  
         Just amazing. I distrust how poetic some of the characterizations feel, but I can't wait for the last book.
