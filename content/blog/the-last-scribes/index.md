@@ -4,6 +4,13 @@ date: 2025-12-08
 authors:
   - admin
 tags: []
+
+# Featured image
+# To use, add an image named `featured.jpg/png` to your page's folder.
+image:
+  caption: ''
+  focal_point: ''
+  preview_only: true
 ---
 
 Imagine you are a scribe in Cologne, Holy Roman Empire, in 1460. You have heard about some invention in Mainz a few years before, something about automatizing your entire work with a new kind of machine. You even get to see one of these new "printed books" and are not impressed. "Look at this kerning; every single one of our novices could do a better job" you explain to your abbott. "Sure, you can make 200 copies. But who needs 200 copies of the same book? The monastery needs one Bible. Maybe two. This is a solution looking for a problem" you post on [news.scribecombinator.com](https://news.ycombinator.com). "At least you do not have to live to see the slop these people put out now" you console the heretic, being marched to his execution.
