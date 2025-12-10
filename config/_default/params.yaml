@@ -22,7 +22,7 @@ marketing:
     plausible: ''
     fathom: ''
     pirsch: ''
-    goatcounter: ''  # Your GoatCounter code (e.g., 'mysite' for mysite.goatcounter.com)
+    goatcounter: 'paradoxical-twin'
   verification:
     google: ''
     baidu: ''
