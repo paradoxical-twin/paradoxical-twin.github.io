@@ -6,11 +6,24 @@
 
 /* Light mode - warm cream background */
 :root {
-  --hb-color-background: #fdfbf9 !important;
-  --hb-color-surface: #f7f4f0 !important;
+  --hb-color-background: #fffcf9 !important;
+  --hb-color-surface: #f9f6f2 !important;
   --hb-color-border: #e5e0db !important;
   --hb-color-text: #1a1a1a !important;
   --hb-color-text-muted: #666666 !important;
+}
+
+/* Explicit background for body and html */
+html, body {
+  background-color: #fffcf9 !important;
+  background-color: var(--hb-color-background) !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  html, body {
+    background-color: #1a1a1a !important;
+    background-color: var(--hb-color-background) !important;
+  }
 }
 
 /* Dark mode - automatically switches based on browser preference */
@@ -123,15 +136,17 @@ button:hover,
    ============================================ */
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji" !important;
-  line-height: 1.6 !important;
-  letter-spacing: -0.003em !important;
+  font-family: "Charter", Georgia, "Times New Roman", serif !important;
+  line-height: 1.7 !important;
+  letter-spacing: 0 !important;
+  font-size: 1.0625rem !important;
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-weight: 600 !important;
-  letter-spacing: -0.02em !important;
-  line-height: 1.2 !important;
+  font-family: "Charter", Georgia, "Times New Roman", serif !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.01em !important;
+  line-height: 1.3 !important;
 }
 
 h1 {
