@@ -1,6 +1,39 @@
 /* Minimalist Design Overrides for Hugo Blox */
 
 /* ============================================
+   CUSTOM COLOR SCHEME
+   ============================================ */
+
+/* Light mode - warm cream background */
+:root {
+  --hb-color-background: #fdfbf9 !important;
+  --hb-color-surface: #f7f4f0 !important;
+  --hb-color-border: #e5e0db !important;
+  --hb-color-text: #1a1a1a !important;
+  --hb-color-text-muted: #666666 !important;
+}
+
+/* Dark mode - automatically switches based on browser preference */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --hb-color-background: #1a1a1a !important;
+    --hb-color-surface: #242424 !important;
+    --hb-color-border: #3a3a3a !important;
+    --hb-color-text: #f0ede8 !important;
+    --hb-color-text-muted: #a0a0a0 !important;
+  }
+}
+
+/* Hugo Blox dark class support (for manual toggle if enabled) */
+.dark {
+  --hb-color-background: #1a1a1a !important;
+  --hb-color-surface: #242424 !important;
+  --hb-color-border: #3a3a3a !important;
+  --hb-color-text: #f0ede8 !important;
+  --hb-color-text-muted: #a0a0a0 !important;
+}
+
+/* ============================================
    REMOVE GRADIENTS & DECORATIVE BACKGROUNDS
    ============================================ */
 
