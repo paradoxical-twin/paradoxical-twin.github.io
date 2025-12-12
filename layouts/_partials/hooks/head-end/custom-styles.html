@@ -1,0 +1,28 @@
+{{/* Critical custom styles - loaded last to ensure they apply */}}
+<style>
+  /* Warm cream background */
+  :root {
+    --hb-color-background: #fffcf9 !important;
+  }
+  html, body {
+    background-color: #fffcf9 !important;
+  }
+
+  /* Dark mode */
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --hb-color-background: #1a1a1a !important;
+    }
+    html, body {
+      background-color: #1a1a1a !important;
+    }
+  }
+
+  /* Charter font */
+  body, p, article, .prose {
+    font-family: "Charter", Georgia, "Times New Roman", serif !important;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: "Charter", Georgia, "Times New Roman", serif !important;
+  }
+</style>
