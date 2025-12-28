@@ -399,3 +399,17 @@ code {
   font-weight: 400 !important;
   padding: 0.25rem 0.5rem !important;
 }
+
+/* ============================================
+   SECTION SPACING - Consistent gaps between sections
+   ============================================ */
+
+.hbb-section {
+  padding-top: 2rem !important;
+  padding-bottom: 2rem !important;
+}
+
+/* First section (biography) can have more top padding */
+.hbb-section:first-of-type {
+  padding-top: 3rem !important;
+}
