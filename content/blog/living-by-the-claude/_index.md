@@ -14,9 +14,9 @@ image:
   preview_only: true
 ---
 
-The end of 2025 is the beginning of a new era of human-computer-interaction. Sure, for over a year now you had vibecoders, slop-merchants and early adopters jumping into the deep end of the agentic coding lifestyle, but the overall vibes still were between "All of this is crap" and "Only some of this is crap, but it's still very frustrating, very often."
+The end of 2025 was the beginning of a new era of human-computer-interaction. Sure, for over a year now you had vibecoders, slop-merchants and early adopters jumping into the deep end of the agentic coding lifestyle, but the overall vibes still were between "All of this is crap" and "Only some of this is crap, but it's still very frustrating, very often, and I don't want it."
 
-Then Opus 4.5 and GPT5-Codex released, both Claude Code and Codex got improvements to their harnesses, and since then the vibes are more between "Holy shit" and spiritual bliss. The old debate of "is this AGI" now has not only Tyler Cowen on the side of the Ayes anymore. A recent exchange between former White House AI Advisor Dean Ball and Twitter user deepfates, sums up the vibes pretty well. 
+Then Opus 4.5 and GPT5-Codex released, both Claude Code and Codex got improvements to their harnesses, and since then the vibes are more between "Holy shit" and spiritual bliss. The old debate of "is this AGI" now has not only Tyler Cowen on the side of the Ayes anymore. An exchange between former White House AI Advisor Dean Ball and Twitter user deepfates, sums up the vibes pretty well. 
 
 
 > > **Dean W. Ball (@deanwball)**
