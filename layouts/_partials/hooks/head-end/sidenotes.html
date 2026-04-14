@@ -1,0 +1,146 @@
+{{/* Sidenotes: converts footnotes to margin notes on wide screens */}}
+<style>
+  /* Overflow fixes for sidenote positioning */
+  article,
+  .article-container,
+  .prose,
+  main,
+  .container,
+  .container-fluid {
+    overflow: visible !important;
+  }
+
+  /* Sidenotes: hidden by default (mobile-first) */
+  .sidenote {
+    display: none;
+  }
+
+  /* Wide screens: show sidenotes in right margin */
+  @media (min-width: 1100px) {
+    .sidenote {
+      display: block;
+      position: absolute;
+      right: -220px;
+      width: 200px;
+      font-size: 0.8125rem;
+      line-height: 1.45;
+      color: var(--hb-color-text-muted);
+      font-family: "Charter", Georgia, "Times New Roman", serif;
+    }
+
+    .sidenote-number {
+      font-weight: 600;
+      font-size: 0.75rem;
+      color: var(--hb-color-text);
+      vertical-align: super;
+      margin-right: 0.15em;
+    }
+
+    /* Hide the original footnotes section when sidenotes are active */
+    .footnotes.sidenotes-active {
+      display: none;
+    }
+  }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  var footnotesSection = document.querySelector('section.footnotes, .footnotes');
+  if (!footnotesSection) return;
+
+  // Find the article wrapper to use as positioning context
+  var article = document.querySelector('article');
+  if (!article) article = document.querySelector('.prose');
+  if (!article) return;
+  article.style.position = 'relative';
+
+  // Find all footnote references (inside <sup> to exclude backrefs)
+  var refs = document.querySelectorAll('sup > a.footnote-ref, sup > a[href^="#fn"]');
+  if (!refs.length) return;
+
+  refs.forEach(function(ref) {
+    var href = ref.getAttribute('href');
+    if (!href || href.indexOf('#fnref') !== -1) return;
+
+    var targetId = href.replace('#', '');
+    var footnoteLi = document.getElementById(targetId);
+    if (!footnoteLi) return;
+
+    var number = ref.textContent.trim();
+    var sup = ref.closest('sup');
+    if (!sup) return;
+
+    // Clone footnote content and strip backref links
+    var content = footnoteLi.cloneNode(true);
+    var backrefs = content.querySelectorAll('.footnote-backref, a[href^="#fnref"]');
+    backrefs.forEach(function(br) { br.remove(); });
+
+    // Clean up: get inner HTML from paragraphs or fallback to full content
+    var paragraphs = content.querySelectorAll('p');
+    var noteHTML = '';
+    if (paragraphs.length) {
+      for (var i = 0; i < paragraphs.length; i++) {
+        noteHTML += paragraphs[i].innerHTML.trim();
+        if (i < paragraphs.length - 1) noteHTML += '<br>';
+      }
+    } else {
+      noteHTML = content.innerHTML.trim();
+    }
+
+    // Create sidenote element
+    var sidenote = document.createElement('span');
+    sidenote.className = 'sidenote';
+    sidenote.setAttribute('role', 'note');
+    sidenote.innerHTML = '<span class="sidenote-number">' + number + '</span> ' + noteHTML;
+
+    // Insert after the <sup> element
+    sup.parentNode.insertBefore(sidenote, sup.nextSibling);
+  });
+
+  // Mark footnotes section for CSS hiding on wide screens
+  footnotesSection.classList.add('sidenotes-active');
+
+  // Overlap prevention
+  function adjustOverlap() {
+    var sidenotes = article.querySelectorAll('.sidenote');
+    if (!sidenotes.length) return;
+
+    // Reset positions first
+    sidenotes.forEach(function(sn) { sn.style.top = ''; });
+
+    // Set initial top positions based on the preceding sup element
+    sidenotes.forEach(function(sn) {
+      // Walk backwards to find the associated <sup>
+      var prev = sn.previousElementSibling;
+      while (prev && prev.tagName !== 'SUP') {
+        prev = prev.previousElementSibling;
+      }
+      if (prev) {
+        sn.style.top = prev.offsetTop + 'px';
+      }
+    });
+
+    // Push overlapping sidenotes downward
+    var lastBottom = 0;
+    var gap = 12;
+    sidenotes.forEach(function(sn) {
+      if (window.getComputedStyle(sn).display === 'none') return;
+      var top = sn.offsetTop;
+      if (top < lastBottom + gap) {
+        sn.style.top = (lastBottom + gap) + 'px';
+      }
+      lastBottom = sn.offsetTop + sn.offsetHeight;
+    });
+  }
+
+  // Run overlap adjustment after layout settles
+  adjustOverlap();
+
+  // Debounced resize handler
+  var resizeTimer;
+  window.addEventListener('resize', function() {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(adjustOverlap, 150);
+  });
+});
+</script>
