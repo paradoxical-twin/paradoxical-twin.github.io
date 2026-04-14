@@ -1,17 +1,16 @@
 ---
 title: 'Reading on China'
-date: 2026-02-04
+date: 2026-04-14
 authors:
   - admin
 tags: []
-draft: true
 
 # Featured image
 # To use, add an image named `featured.jpg/png` to your page's folder.
 image:
   caption: ''
   focal_point: ''
-  preview_only: true
+  preview_only: false
 ---
 
 Understanding China (whatever that means) seems to me to be one of the most important things I can do as a young tech-y-politics-y person right now. I certainly am nowhere near that. This is a list of books I've been reading or listening to, on China specifically. Some unstructured thoughts and notes on each below. 
@@ -29,7 +28,7 @@ I probably should have read Romance of the Three Kingdoms instead. This book's t
 
 Came into this hoping for something like Caro's treatment of Moses, both regarding the shifting political economies that Deng was working in, and the personal drives behind such an extraordinary mind. That is... not what this book is about. But it's still very interesting, even if it lacks color.
 
-The most striking throughline for me, somewhat concealed by Vogel's very dry delivery, is how *incredibly* self-controlled Deng was, in the midst of constant threat for himself, anyone close to him, and with constantly shifting goalposts and no guarantee of anything. He lived a life without ever subordinating his career chances and odds of political survival to his personal emotions, even when they conflicted with the life and health of his family, his personal freedom, ideological coherence, or honor [footnote: Except for one time, where he blew up at Jiang Qing, at the height of her power, in a meeting when she misrepresented tonnage statistics of certain freight ships. Hero.]. He really was the ultimate grindset guy. Unfortunately, you don't really get a sense of knowing what moved him from Vogel; the chapters up until his ascent after Maos death fly by with the biographical details, but it really feels like reading about an alien creature. Deng did not write down *anything*, and I got a new appreciation for the western tradition of record keeping and opening up of stored records, interviews, memoirs, and hagiographies, that at least create a paper trail for later works. I still also don't understand the power dynamics in the Politburo at all, such that the later chapters on the battles over reform speed, succession possibilities, the falls of Hu Yaobang and Zhao Ziyang, and the Tiananmen massacre, were interesting but didn't leave me with a good sense of what actually happened, or could have been different. But I believe this to be not a problem of the book, but rather of me needing to become a full-time China scholar, if I want to get there.
+The most striking throughline for me, somewhat concealed by Vogel's very dry delivery, is how *incredibly* self-controlled Deng was, in the midst of constant threat for himself, anyone close to him, and with constantly shifting goalposts and no guarantee of anything. He lived a life without ever subordinating his career chances and odds of political survival to his personal emotions, even when they conflicted with the life and health of his family, his personal freedom, ideological coherence, or honor[^1]. He really was the ultimate grindset guy. Unfortunately, you don't really get a sense of knowing what moved him from Vogel; the chapters up until his ascent after Maos death fly by with the biographical details, but it really feels like reading about an alien creature. Deng did not write down *anything*, and I got a new appreciation for the western tradition of record keeping and opening up of stored records, interviews, memoirs, and hagiographies, that at least create a paper trail for later works. I still also don't understand the power dynamics in the Politburo at all, such that the later chapters on the battles over reform speed, succession possibilities, the falls of Hu Yaobang and Zhao Ziyang, and the Tiananmen massacre, were interesting but didn't leave me with a good sense of what actually happened, or could have been different. But I believe this to be not a problem of the book, but rather of me needing to become a full-time China scholar, if I want to get there.
 
 I was very impressed with Deng's almost single-minded obsession with scientific and technological progress, and specifically the realisation that China was too far behind, needed to play long-term strategies to catch up, and *had to be mindful of their own backwardness*. The second half of the book contains a staggering number of quotes by Deng exhorting people to respect and develop technology, and to scale back ambitions as long as they were playing catch-up with the first and second world. I suspect that a lot of more patriotic Chinese must have been extremely annoyed by him constantly trashing the scientific and industrial prowess of their motherland. But he was obviously correct, and now China is reaping the benefits. German political and industrial leaders would probably do well to adopt some of that attitude, now that we are getting clobbered in any manufacturing segment outside of EUV lithography components. But I see a lot more sentiments of "We have to celebrate our strengths, not just worry about our weaknesses" whenever the political debate gets slightly realistic and uncomfortable, and general failure to extrapolate the current economic trends, or their effects on our prosperity and long-term future. Complacency is a hell of a drug, and I definitely got more pessimistic about Germany's outlook from reading how different the Chinese attitude and strategy was, and realising how far away from a serious effort we are. 
 
@@ -66,3 +65,5 @@ On the list:
 - Richard McGregor - The Party
 - Pin Ho & Wenguang Huang - A Death in the Lucky Holiday Hotel
 - Chun Han Won - Party of One
+
+[^1]: Except for one time, where he blew up at Jiang Qing, at the height of her power, in a meeting when she misrepresented tonnage statistics of certain freight ships. Hero.
