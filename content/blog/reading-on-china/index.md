@@ -15,7 +15,11 @@ image:
 
 Understanding China (whatever that means) seems to me to be one of the most important things I can do as a young tech-y-politics-y person right now. I certainly am nowhere near that. This is a list of books I've been reading or listening to, on China specifically. Some unstructured thoughts and notes on each below. 
 
+<div class="book-review">
+
 **Jacques Gernet - A History of Chinese Civilization (2nd edition)**
+
+<div class="book-review-notes">
 
 My first foray (mostly during early covid lockdowns), and probably not the best way to start. Very dense, and not really meant to be read cover-to-cover, especially by someone without a good understanding of Chinese geography (which I have gotten much better at since), or much context on pre-Ming Chinese history (still meh). Wade-Giles romanization made it even harder for me to link concepts and places up in my mind. Still, it was good as a context pump for almost everything else I read afterwards, and I will go back some day and hope to get much more out of it. I never finished it, but reviews say that it gets much weaker in the last chapters, especially regarding Mao. Fortunately, most of the other books I have bought cover exactly those areas. 
 
@@ -23,8 +27,15 @@ At some point I would really like to understand how chariot warfare worked in an
 
 I probably should have read Romance of the Three Kingdoms instead. This book's treatment of the entire era left me more confused than enlightened, and if my goal is actually understanding how the China sees itself and its history, then I am off to the wrong start. 
 
+</div>
+</div>
+
+
+<div class="book-review">
 
 **Ezra F. Vogel - Deng Xiaoping and the Transformation of China**
+
+<div class="book-review-notes">
 
 Came into this hoping for something like Caro's treatment of Moses, both regarding the shifting political economies that Deng was working in, and the personal drives behind such an extraordinary mind. That is... not what this book is about. But it's still very interesting, even if it lacks color.
 
@@ -34,8 +45,15 @@ I was very impressed with Deng's almost single-minded obsession with scientific 
 
 I would love to celebrate Deng as a hero of humanity, having pulled hundreds of millions of people from crushing poverty. But I wonder whether he alone was able to chart a course where the CCP is still extremely authoritarian, but globally successful. Regardless of how much the US wants to fuck up its own global order, and of how gleefully it pulls the rug from under my own value system, I certainly don't want to live in a world dominated by the Chinese mode of governance either. In the long run, I hope that I will be able to celebrate, not curse, that Deng was so incredibly competent.
 
+</div>
+</div>
+
+
+<div class="book-review">
 
 **Peter Hessler - Other Rivers: A Chinese Education**
+
+<div class="book-review-notes">
 
 The opposite of Vogel and Wang, this book is a narrow but deep view into two generations of students at good-but-not-great universities, as seen by an English professor. Hessler gives a lot of interesting color on the mental (and physical!) differences between the first real reform-era student generation, and the little emperors of (roughly) my own cohort. He then shifts into a personal account of the first year of COVID, ending with him being forced to leave the country before the later rounds of lockdowns, protests, and eventual policy flip-flop. 
 
@@ -45,8 +63,15 @@ Hesslers passages on Covid origins or the relative competency of the governments
 
 I think the focus on the small, personal, and human, was a much needed break from the more high-level (Wang, Gernet) or cold (Vogel) other books. Dan Wang likes to talk about how funny and creative young Chinese are, but you rarely see examples without knowing Mandarin. I talk to a decent number of Chinese grad students in my job, but I find it harder to get to really know them, or have deep conversations about their country, than with Indians or Latinos. Other Rivers had some nice character portraits filling the gap, and I really should read more of this kind of book. But probably won't, just from looking at the reading list at the bottom...
 
+</div>
+</div>
+
+
+<div class="book-review">
 
 **Dan Wang - Breakneck: China's Quest to Engineer the Future**
+
+<div class="book-review-notes">
 
 I credit Dan with initially sparking my interest in China at all, especially its economic development and futuristic spirit, and being the most interesting author I had read up to that point (before I found the rat-adjacent blogosphere, though Dan's annual letters are still up there with the best of them). Back during my Physics undergrad, he showed me that you could actually be a guy that is deeply interested in and knowledgeable about history, technical subjects, and music (plus his food obsession, which I sadly cannot match), and he has been a role model ever since (yes, this sounds extremly parasocial on re-reading, but I'm really grateful to him). I was very frustrated that most of his output back then was hidden behind the Gavekal Dragonomics paywalls, and could not be more pleased with how much more public-facing he has become since. Of course, everyone and their mother has now swallowed his worldview whole ("total Dan Wang victory", as Joe Weisenthal put it), but I feel like he gave me a solid five years of head start in understanding what China is actually able to do, and how incredibly unprepared and unserious my own country is in meeting that challenge. Come to think of it, I still sometimes have conversations with research colleagues dismissing China's ability to compete in something - even as we are struggling to achieve things Pan Jianwei's group builds as a matter of routine. The meme of "China copies, but does not innovate" really did some long-lasting damage.
 
@@ -54,9 +79,21 @@ Most things to be said about this book have been said during Wang's (well-execut
 
 His "Engineers vs. Lawyers" dichotomy left me wondering where Germany fits in - Wang sometimes has residual appreciation for the relative manufacturing strength of Germany, and his emphasis on the importance process knowledge should be bullish for a german industrial renaissance, but on the ground the outlook seems pretty crap. Engineering-stateishness would also not be a good explanatory model for the political decisions I can remember, though it might be applicable more towards Schröder-era reforms during my early childhood. A lawyerly society we are also not, we don't like to talk nearly as much as the anglos. Is Germany not a state of lawyers or engineers, but of former engineers that became managers and bureaucrats, and lost their edge?
 
+</div>
+</div>
 
 
-Honorable Mention: The **Three-Body-Problem trilogy by Liu Cixin**. Self-recommending, and the Cultural Revolution scenes were exactly as horrifying as they were needed to be. It seems like many important CCP leaders had origin stories almost as terrible as Ye Wenjie (c.f. Deng's favorite son getting paralysed after being thrown out of a window by Red Guards), yet stayed loyal to the system and even perpetuated it. Why did Ye Wenjie lose her faith in humanity (and of course, in Communism and the Party), and they did not? I fundamentally do not understand the mental life of people who experienced all of the willful atrocities inflicted by the CCP on its own people, yet then chose to support and uphold that system. This also always confused me about some of the early GDR leaders, who survived purges and reeducations during exile in Moscow. 
+
+<div class="book-review">
+
+**Honorable Mention: Three-Body-Problem trilogy by Liu Cixin**
+
+<div class="book-review-notes">
+
+Self-recommending, and the Cultural Revolution scenes were exactly as horrifying as they were needed to be. It seems like many important CCP leaders had origin stories almost as terrible as Ye Wenjie (c.f. Deng's favorite son getting paralysed after being thrown out of a window by Red Guards), yet stayed loyal to the system and even perpetuated it. Why did Ye Wenjie lose her faith in humanity (and of course, in Communism and the Party), and they did not? I fundamentally do not understand the mental life of people who experienced all of the willful atrocities inflicted by the CCP on its own people, yet then chose to support and uphold that system. This also always confused me about some of the early GDR leaders, who survived purges and reeducations during exile in Moscow. 
+
+</div>
+</div>
 
 
 On the list:
