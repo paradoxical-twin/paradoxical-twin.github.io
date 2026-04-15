@@ -1,0 +1,45 @@
+{{/* Collapsible book review sections */}}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    var sections = document.querySelectorAll('.book-review-notes');
+
+    sections.forEach(function(section) {
+      section.classList.add('collapsed');
+
+      var toggle = document.createElement('span');
+      toggle.className = 'book-review-toggle';
+      toggle.textContent = '... (Read more)';
+      toggle.setAttribute('role', 'button');
+      toggle.setAttribute('tabindex', '0');
+      section.parentNode.insertBefore(toggle, section.nextSibling);
+
+      function toggleSection() {
+        if (section.classList.contains('collapsed')) {
+          section.style.maxHeight = section.scrollHeight + 'px';
+          section.classList.remove('collapsed');
+          toggle.textContent = '(Show less)';
+          setTimeout(function() {
+            if (!section.classList.contains('collapsed')) {
+              section.style.maxHeight = 'none';
+            }
+          }, 200);
+        } else {
+          section.style.maxHeight = section.scrollHeight + 'px';
+          // Force reflow before collapsing
+          section.offsetHeight;
+          section.classList.add('collapsed');
+          section.style.maxHeight = '';
+          toggle.textContent = '... (Read more)';
+        }
+      }
+
+      toggle.addEventListener('click', toggleSection);
+      toggle.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          toggleSection();
+        }
+      });
+    });
+  });
+</script>
