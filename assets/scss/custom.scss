@@ -427,13 +427,13 @@ code {
 }
 
 .book-review-notes.collapsed {
-  max-height: 3.4em; /* 2 lines at line-height 1.7 */
-  overflow: hidden;
-  color: var(--hb-color-text-muted);
+  max-height: 3.4em !important; /* 2 lines at line-height 1.7 */
+  overflow: hidden !important;
+  color: var(--hb-color-text-muted) !important;
 }
 
 .book-review-notes.collapsed p {
-  color: inherit;
+  color: inherit !important;
 }
 
 .book-review-toggle {
