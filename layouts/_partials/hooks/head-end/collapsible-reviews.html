@@ -11,30 +11,38 @@
   .book-review-notes.collapsed {
     max-height: 3.4em !important; /* 2 lines at line-height 1.7 */
     overflow: hidden !important;
-    color: var(--hb-color-text-muted, #666666) !important;
+    -webkit-mask-image: linear-gradient(to bottom, black 50%, rgba(0,0,0,0.4) 100%) !important;
+    mask-image: linear-gradient(to bottom, black 50%, rgba(0,0,0,0.4) 100%) !important;
   }
 
-  .book-review-notes.collapsed p {
-    color: inherit !important;
+  .book-review-notes.collapsed > p:first-child {
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    line-height: 1.7 !important;
   }
 
   .book-review-toggle {
-    display: inline-block;
+    display: block;
     cursor: pointer;
     color: var(--hb-color-text-muted, #666666);
     font-style: italic;
     background: none;
     border: none !important;
-    border-bottom: 1px solid transparent !important;
+    border-bottom: none !important;
     padding: 0;
-    margin-top: 0.25rem;
+    margin-top: 0;
     font-family: inherit;
     font-size: inherit;
     line-height: inherit;
+    width: fit-content;
   }
 
   .book-review-toggle:hover {
-    border-bottom-color: var(--hb-color-text-muted, #666666) !important;
+    border-bottom: 1px solid var(--hb-color-text-muted, #666666) !important;
   }
 </style>
 <script>
@@ -46,7 +54,7 @@
 
       var toggle = document.createElement('span');
       toggle.className = 'book-review-toggle';
-      toggle.textContent = '... (Read more)';
+      toggle.textContent = '(Read more)';
       toggle.setAttribute('role', 'button');
       toggle.setAttribute('tabindex', '0');
       section.parentNode.insertBefore(toggle, section.nextSibling);
@@ -67,7 +75,7 @@
           section.offsetHeight;
           section.classList.add('collapsed');
           section.style.maxHeight = '';
-          toggle.textContent = '... (Read more)';
+          toggle.textContent = '(Read more)';
         }
       }
 
