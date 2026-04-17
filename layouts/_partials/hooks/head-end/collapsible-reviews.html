@@ -1,0 +1,91 @@
+{{/* Collapsible book review sections */}}
+<style>
+  .book-review {
+    margin-bottom: 2rem;
+  }
+
+  .book-review-notes {
+    position: relative;
+  }
+
+  .book-review-notes.collapsed {
+    max-height: 3.4em !important; /* 2 lines at line-height 1.7 */
+    overflow: hidden !important;
+    -webkit-mask-image: linear-gradient(to bottom, black 50%, rgba(0,0,0,0.4) 100%) !important;
+    mask-image: linear-gradient(to bottom, black 50%, rgba(0,0,0,0.4) 100%) !important;
+  }
+
+  .book-review-notes.collapsed > p:first-child {
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    line-height: 1.7 !important;
+  }
+
+  .book-review-toggle {
+    display: block;
+    cursor: pointer;
+    color: var(--hb-color-text-muted, #666666);
+    font-style: italic;
+    background: none;
+    border: none !important;
+    border-bottom: none !important;
+    padding: 0;
+    margin-top: 0;
+    font-family: inherit;
+    font-size: inherit;
+    line-height: inherit;
+    width: fit-content;
+  }
+
+  .book-review-toggle:hover {
+    border-bottom: 1px solid var(--hb-color-text-muted, #666666) !important;
+  }
+</style>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    var sections = document.querySelectorAll('.book-review-notes');
+
+    sections.forEach(function(section) {
+      section.classList.add('collapsed');
+
+      var toggle = document.createElement('span');
+      toggle.className = 'book-review-toggle';
+      toggle.textContent = '(Read more)';
+      toggle.setAttribute('role', 'button');
+      toggle.setAttribute('tabindex', '0');
+      section.parentNode.insertBefore(toggle, section.nextSibling);
+
+      function toggleSection() {
+        if (section.classList.contains('collapsed')) {
+          section.style.maxHeight = section.scrollHeight + 'px';
+          section.classList.remove('collapsed');
+          toggle.textContent = '(Show less)';
+          setTimeout(function() {
+            if (!section.classList.contains('collapsed')) {
+              section.style.maxHeight = 'none';
+            }
+          }, 200);
+        } else {
+          section.style.maxHeight = section.scrollHeight + 'px';
+          // Force reflow before collapsing
+          section.offsetHeight;
+          section.classList.add('collapsed');
+          section.style.maxHeight = '';
+          toggle.textContent = '(Read more)';
+        }
+      }
+
+      toggle.addEventListener('click', toggleSection);
+      toggle.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          toggleSection();
+        }
+      });
+    });
+  });
+</script>

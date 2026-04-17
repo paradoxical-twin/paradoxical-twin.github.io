@@ -413,3 +413,44 @@ code {
 .hbb-section:first-of-type {
   padding-top: 3rem !important;
 }
+
+/* ============================================
+   COLLAPSIBLE BOOK REVIEWS
+   ============================================ */
+
+.book-review {
+  margin-bottom: 2rem;
+}
+
+.book-review-notes {
+  position: relative;
+}
+
+.book-review-notes.collapsed {
+  max-height: 3.4em !important; /* 2 lines at line-height 1.7 */
+  overflow: hidden !important;
+  color: var(--hb-color-text-muted) !important;
+}
+
+.book-review-notes.collapsed p {
+  color: inherit !important;
+}
+
+.book-review-toggle {
+  display: inline-block;
+  cursor: pointer;
+  color: var(--hb-color-text-muted);
+  font-style: italic;
+  background: none;
+  border: none !important;
+  border-bottom: 1px solid transparent !important;
+  padding: 0;
+  margin-top: 0.25rem;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+}
+
+.book-review-toggle:hover {
+  border-bottom-color: var(--hb-color-text-muted) !important;
+}
