@@ -1,0 +1,1004 @@
+/*
+ * Poincaré Sphere Lab — interactive Jones-calculus polarization simulator.
+ * Companion tool for "Optik und Wellen" Übungsserien 8 & 9 (SoSe 2026).
+ *
+ * Conventions (chosen to match the exercise sheets / Musterlösungen):
+ *   |H> = (1,0), |V> = (0,1), |D> = (1,1)/√2, |A> = (1,-1)/√2,
+ *   |L> = (1,i)/√2 (left circular, NORTH pole), |R> = (1,-i)/√2.
+ *   S0 = |EH|²+|EV|², S1 = |EH|²-|EV|², S2 = 2Re{EH EV*}, S3 = -2Im{EH EV*},
+ *   i.e. S3 = |EL|² - |ER|²  (Aufgabe 8.2).
+ *   Retarder at lab angle θ with retardance δ:  M = R(θ)·diag(1, e^{iδ})·R(-θ)
+ *   so QWP(0°) = diag(1,i), HWP(0°) = diag(1,-1)   (Aufgaben 8.3 / 9.1).
+ *   On the sphere this is a right-handed rotation by δ about the equatorial
+ *   axis (cos2θ, sin2θ, 0) — the eigenstate of the element.
+ *   Polarizer at θ: projector R(θ)·diag(1,0)·R(-θ); output renormalized,
+ *   transmitted fraction tracked separately.
+ */
+'use strict';
+
+/* ============================== complex math ============================= */
+
+function cx(re, im) { return { re: re, im: im || 0 }; }
+function cadd(a, b) { return cx(a.re + b.re, a.im + b.im); }
+function cmul(a, b) { return cx(a.re * b.re - a.im * b.im, a.re * b.im + a.im * b.re); }
+function cconj(a) { return cx(a.re, -a.im); }
+function cabs2(a) { return a.re * a.re + a.im * a.im; }
+function cscale(a, s) { return cx(a.re * s, a.im * s); }
+function cexp(phi) { return cx(Math.cos(phi), Math.sin(phi)); }
+
+/* 2x2 complex matrices as [[a,b],[c,d]], Jones vectors as [e0,e1]. */
+function matMul(M, N) {
+  return [
+    [cadd(cmul(M[0][0], N[0][0]), cmul(M[0][1], N[1][0])),
+     cadd(cmul(M[0][0], N[0][1]), cmul(M[0][1], N[1][1]))],
+    [cadd(cmul(M[1][0], N[0][0]), cmul(M[1][1], N[1][0])),
+     cadd(cmul(M[1][0], N[0][1]), cmul(M[1][1], N[1][1]))]
+  ];
+}
+function matVec(M, v) {
+  return [
+    cadd(cmul(M[0][0], v[0]), cmul(M[0][1], v[1])),
+    cadd(cmul(M[1][0], v[0]), cmul(M[1][1], v[1]))
+  ];
+}
+
+const DEG = Math.PI / 180;
+
+function rotMat(thetaDeg) {
+  const c = Math.cos(thetaDeg * DEG), s = Math.sin(thetaDeg * DEG);
+  return [[cx(c), cx(-s)], [cx(s), cx(c)]];
+}
+
+function retarderMatrix(thetaDeg, deltaDeg) {
+  const M0 = [[cx(1), cx(0)], [cx(0), cexp(deltaDeg * DEG)]];
+  return matMul(rotMat(thetaDeg), matMul(M0, rotMat(-thetaDeg)));
+}
+
+function polarizerMatrix(thetaDeg) {
+  const P0 = [[cx(1), cx(0)], [cx(0), cx(0)]];
+  return matMul(rotMat(thetaDeg), matMul(P0, rotMat(-thetaDeg)));
+}
+
+/* ============================ Stokes <-> Jones =========================== */
+
+function stokesOf(v) {
+  const S0 = cabs2(v[0]) + cabs2(v[1]);
+  if (S0 < 1e-15) return null;
+  const w = cmul(v[0], cconj(v[1])); // EH·EV*
+  return [
+    (cabs2(v[0]) - cabs2(v[1])) / S0,
+    2 * w.re / S0,
+    -2 * w.im / S0                  // S3 = -2 Im{EH EV*}  (L at +S3)
+  ];
+}
+
+/* ψ azimuth, χ ellipticity (both rad): j = R(ψ)·(cosχ, i·sinχ). */
+function jonesFromPsiChi(psi, chi) {
+  const cP = Math.cos(psi), sP = Math.sin(psi);
+  const cC = Math.cos(chi), sC = Math.sin(chi);
+  return [cx(cP * cC, -sP * sC), cx(sP * cC, cP * sC)];
+}
+
+function jonesFromStokes(s) {
+  const psi = 0.5 * Math.atan2(s[1], s[0]);
+  const chi = 0.5 * Math.asin(Math.max(-1, Math.min(1, s[2])));
+  return jonesFromPsiChi(psi, chi);
+}
+
+function randomJones() {
+  // uniform on the sphere => uniform fully polarized state
+  const u = 2 * Math.random() - 1;
+  const phi = 2 * Math.PI * Math.random();
+  const r = Math.sqrt(Math.max(0, 1 - u * u));
+  return jonesFromStokes([r * Math.cos(phi), r * Math.sin(phi), u]);
+}
+
+function normalizeJones(v) {
+  const n = Math.sqrt(cabs2(v[0]) + cabs2(v[1]));
+  if (n < 1e-12) return null;
+  return [cscale(v[0], 1 / n), cscale(v[1], 1 / n)];
+}
+
+/* Fix the global phase so the larger component is real and positive. */
+function canonicalJones(v) {
+  const ref = cabs2(v[0]) >= cabs2(v[1]) ? v[0] : v[1];
+  const ph = Math.atan2(ref.im, ref.re);
+  const e = cexp(-ph);
+  return [cmul(v[0], e), cmul(v[1], e)];
+}
+
+const BASIS = {
+  H: { jones: [cx(1), cx(0)], stokes: [1, 0, 0], name: 'H — horizontal' },
+  V: { jones: [cx(0), cx(1)], stokes: [-1, 0, 0], name: 'V — vertical' },
+  D: { jones: [cx(Math.SQRT1_2), cx(Math.SQRT1_2)], stokes: [0, 1, 0], name: 'D — diagonal (+45°)' },
+  A: { jones: [cx(Math.SQRT1_2), cx(-Math.SQRT1_2)], stokes: [0, -1, 0], name: 'A — anti-diagonal (−45°)' },
+  L: { jones: [cx(Math.SQRT1_2), cx(0, Math.SQRT1_2)], stokes: [0, 0, 1], name: 'L — left circular' },
+  R: { jones: [cx(Math.SQRT1_2), cx(0, -Math.SQRT1_2)], stokes: [0, 0, -1], name: 'R — right circular' }
+};
+
+/* ============================== components =============================== */
+
+const COMPONENT_DEFS = {
+  HWP: { short: 'λ/2', name: 'Half-wave plate', kind: 'retarder', delta: 180, color: '#6d5ce8' },
+  QWP: { short: 'λ/4', name: 'Quarter-wave plate', kind: 'retarder', delta: 90, color: '#0d9488' },
+  PS:  { short: 'δ',   name: 'Phase shifter', kind: 'retarder', variableDelta: true, defaultDelta: 90, color: '#d97706' },
+  POL: { short: 'P',   name: 'Polarizer', kind: 'polarizer', color: '#64748b' }
+};
+
+function componentMatrix(comp, override) {
+  const def = COMPONENT_DEFS[comp.type];
+  let angle = comp.angle, phase = comp.phase;
+  if (override && override.id === comp.id) {
+    if (override.param === 'angle') angle = override.value;
+    if (override.param === 'phase') phase = override.value;
+  }
+  if (def.kind === 'polarizer') return polarizerMatrix(angle);
+  return retarderMatrix(angle, def.variableDelta ? phase : def.delta);
+}
+
+/* Eigenstate axis of an element with axis angle θ: equatorial, at 2θ. */
+function elementAxis(angleDeg) {
+  return [Math.cos(2 * angleDeg * DEG), Math.sin(2 * angleDeg * DEG), 0];
+}
+
+/*
+ * Propagate a normalized input Jones vector through the component chain.
+ * Returns { jones (unnormalized), intensity (=|j|², transmission since the
+ * input is normalized and retarders are unitary), stokes (normalized) or
+ * null when the beam is extinguished }.
+ */
+function propagate(inputJones, components, override) {
+  let v = inputJones;
+  for (let i = 0; i < components.length; i++) {
+    v = matVec(componentMatrix(components[i], override), v);
+  }
+  const I = cabs2(v[0]) + cabs2(v[1]);
+  return { jones: v, intensity: I, stokes: I > 1e-12 ? stokesOf(v) : null };
+}
+
+/* =============================== colormap ================================ */
+
+function jet(t) {
+  const v = Math.max(0, Math.min(1, t));
+  const c = function (x) { return Math.max(0, Math.min(1, 1.5 - Math.abs(x))); };
+  return [Math.round(255 * c(4 * v - 3)), Math.round(255 * c(4 * v - 2)), Math.round(255 * c(4 * v - 1))];
+}
+function jetCss(t, alpha) {
+  const c = jet(t);
+  return 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + (alpha == null ? 1 : alpha) + ')';
+}
+
+/* Export the pure physics for node-based self tests; the rest is DOM-only. */
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    cx, cadd, cmul, cabs2, matMul, matVec, rotMat, retarderMatrix,
+    polarizerMatrix, stokesOf, jonesFromStokes, jonesFromPsiChi,
+    normalizeJones, canonicalJones, randomJones, propagate,
+    componentMatrix, elementAxis, BASIS, COMPONENT_DEFS, jet
+  };
+}
+
+/* ======================= application (browser only) ====================== */
+
+if (typeof document !== 'undefined') (function () {
+
+  const SCAN_MS = 3000;
+  const SCAN_STEPS = 720;          // 0.5° resolution, 0…360°
+
+  /* ------------------------------ app state ----------------------------- */
+
+  let nextId = 1;
+  const state = {
+    inputKey: 'H',
+    inputJones: BASIS.H.jones,
+    components: [],                // {id, type, angle, phase?}
+    scanAnim: null,                // running scan animation
+    scanView: null                 // frozen scan result (survives until any edit)
+  };
+
+  function currentInputJones() { return state.inputJones; }
+
+  function liveResult() {
+    return propagate(currentInputJones(), state.components, null);
+  }
+
+  /* ------------------------------ DOM refs ------------------------------ */
+
+  const $ = function (id) { return document.getElementById(id); };
+  const canvas = $('sphere');
+  const ctx = canvas.getContext('2d');
+  const chainEl = $('chain');
+  const paletteEl = $('palette');
+  const legendEl = $('scanLegend');
+  const legendBar = $('legendBar');
+  const legendLabel = $('legendLabel');
+  const legendClose = $('legendClose');
+  const legendStatus = $('legendStatus');
+  const inputSel = $('inputSel');
+  const diceBtn = $('dice');
+  const presetSel = $('presetSel');
+  const presetDesc = $('presetDesc');
+  const detPct = $('detPct');
+
+  /* ------------------------------ formatting ---------------------------- */
+
+  function fmt(x, digits) {
+    const d = digits == null ? 3 : digits;
+    let s = x.toFixed(d);
+    if (s === '-' + (0).toFixed(d)) s = (0).toFixed(d);
+    return s;
+  }
+
+  function fmtComplex(c) {
+    const re = Math.abs(c.re) < 5e-4 ? 0 : c.re;
+    const im = Math.abs(c.im) < 5e-4 ? 0 : c.im;
+    if (im === 0) return fmt(re);
+    if (re === 0) return fmt(im) + 'i';
+    return fmt(re) + (im > 0 ? ' + ' : ' − ') + fmt(Math.abs(im)) + 'i';
+  }
+
+  function jonesHtml(v) {
+    const c = canonicalJones(v);
+    return '(' + fmtComplex(c[0]) + ',&nbsp; ' + fmtComplex(c[1]) + ')';
+  }
+
+  function nearestBasisLabel(s) {
+    for (const k in BASIS) {
+      const b = BASIS[k].stokes;
+      const d2 = (s[0] - b[0]) ** 2 + (s[1] - b[1]) ** 2 + (s[2] - b[2]) ** 2;
+      if (d2 < 1e-5) return k;
+    }
+    return null;
+  }
+
+  /* ------------------------------ readouts ------------------------------ */
+
+  function updateReadouts(result) {
+    $('roInput').innerHTML = jonesHtml(currentInputJones());
+    const I = result.intensity;
+    detPct.textContent = (100 * I).toFixed(1) + '%';
+    $('roIntensity').textContent = (100 * I).toFixed(1) + ' %';
+    $('roIntensityBar').style.width = Math.max(0, Math.min(100, 100 * I)) + '%';
+    if (result.stokes) {
+      const s = result.stokes;
+      const nv = normalizeJones(result.jones);
+      const basis = nearestBasisLabel(s);
+      $('roOutput').innerHTML = jonesHtml(nv) + (basis ? ' <span class="chip">≈ ' + basis + '</span>' : '');
+      $('roStokes').textContent = '(' + fmt(s[0]) + ', ' + fmt(s[1]) + ', ' + fmt(s[2]) + ')';
+      const psi = 0.5 * Math.atan2(s[1], s[0]) / DEG;
+      const chi = 0.5 * Math.asin(Math.max(-1, Math.min(1, s[2]))) / DEG;
+      $('roEllipse').textContent = 'ψ = ' + fmt(psi, 1) + '°,  χ = ' + fmt(chi, 1) + '°';
+    } else {
+      $('roOutput').innerHTML = '<span class="chip warn">beam extinguished</span>';
+      $('roStokes').textContent = '—';
+      $('roEllipse').textContent = '—';
+    }
+  }
+
+  /* ============================ sphere renderer ========================== */
+
+  const view = { azim: -35, elev: 20, scale: 1 };
+
+  function viewFn() {
+    const sa = Math.sin(view.azim * DEG), ca = Math.cos(view.azim * DEG);
+    const se = Math.sin(view.elev * DEG), ce = Math.cos(view.elev * DEG);
+    return function (p) {
+      return [
+        -sa * p[0] + ca * p[1],                       // screen right
+        -se * (ca * p[0] + sa * p[1]) + ce * p[2],    // screen up
+        ce * (ca * p[0] + sa * p[1]) + se * p[2]      // toward viewer
+      ];
+    };
+  }
+
+  /* Pre-computed grid circles (world coords). */
+  const GRID = (function () {
+    const circles = [];
+    const N = 120;
+    for (let lat = -60; lat <= 60; lat += 30) {
+      const r = Math.cos(lat * DEG), z = Math.sin(lat * DEG);
+      const pts = [];
+      for (let k = 0; k <= N; k++) {
+        const t = 2 * Math.PI * k / N;
+        pts.push([r * Math.cos(t), r * Math.sin(t), z]);
+      }
+      circles.push({ pts: pts, equator: lat === 0 });
+    }
+    for (let m = 0; m < 180; m += 30) {
+      const c = Math.cos(m * DEG), s = Math.sin(m * DEG);
+      const pts = [];
+      for (let k = 0; k <= N; k++) {
+        const t = 2 * Math.PI * k / N;
+        pts.push([Math.sin(t) * c, Math.sin(t) * s, Math.cos(t)]);
+      }
+      circles.push({ pts: pts, equator: false });
+    }
+    return circles;
+  })();
+
+  const AXIS_LABELS = [
+    ['H', [1, 0, 0]], ['V', [-1, 0, 0]],
+    ['D', [0, 1, 0]], ['A', [0, -1, 0]],
+    ['L', [0, 0, 1]], ['R', [0, 0, -1]]
+  ];
+
+  function resizeCanvas() {
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.parentElement.getBoundingClientRect();
+    const w = Math.max(280, rect.width), h = Math.max(280, rect.height);
+    canvas.width = Math.round(w * dpr);
+    canvas.height = Math.round(h * dpr);
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
+    draw();
+  }
+
+  /*
+   * Painter's algorithm in three passes: everything on the far hemisphere is
+   * drawn first, then the translucent sphere body "frosts" it, then the near
+   * hemisphere is drawn on top. A point is "near" iff its view z > 0.
+   */
+  function draw() {
+    const dpr = window.devicePixelRatio || 1;
+    const W = canvas.width / dpr, H = canvas.height / dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+    const cxs = W / 2, cys = H / 2;
+    const Rs = 0.40 * Math.min(W, H) * view.scale;
+    const proj = viewFn();
+    const P = function (p) {
+      const q = proj(p);
+      return [cxs + Rs * q[0], cys - Rs * q[1], q[2]];
+    };
+
+    const scan = state.scanAnim || state.scanView;
+    const upTo = state.scanAnim ? state.scanAnim.idx : (state.scanView ? SCAN_STEPS : -1);
+    const result = scan ? scan.samples[Math.max(0, upTo)] : liveResult();
+    const inputS = stokesOf(currentInputJones());
+
+    function drawPolyline(pts, near, style) {
+      ctx.strokeStyle = style.stroke;
+      ctx.lineWidth = style.width;
+      ctx.beginPath();
+      let open = false;
+      for (let i = 0; i < pts.length - 1; i++) {
+        const a = P(pts[i]), b = P(pts[i + 1]);
+        const front = (a[2] + b[2]) / 2 > 0;
+        if (front === near) {
+          if (!open) { ctx.moveTo(a[0], a[1]); open = true; }
+          ctx.lineTo(b[0], b[1]);
+        } else if (open) { open = false; }
+      }
+      ctx.stroke();
+    }
+
+    function drawGrid(near) {
+      for (const c of GRID) {
+        drawPolyline(c.pts, near, {
+          stroke: c.equator
+            ? (near ? 'rgba(70,82,105,0.55)' : 'rgba(70,82,105,0.30)')
+            : (near ? 'rgba(105,116,138,0.32)' : 'rgba(105,116,138,0.18)'),
+          width: c.equator ? 1.6 : 1
+        });
+      }
+      // principal axes as thin diameters
+      for (const al of AXIS_LABELS) {
+        const a = P([0, 0, 0]), b = P(al[1]);
+        if ((b[2] > 0) !== near) continue;
+        ctx.strokeStyle = near ? 'rgba(60,70,92,0.45)' : 'rgba(60,70,92,0.25)';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    }
+
+    function drawTrace(near) {
+      if (!scan || upTo < 1) return;
+      const samples = scan.samples;
+      for (let i = 0; i < upTo; i++) {
+        const sA = samples[i], sB = samples[i + 1];
+        if (!sA.stokes || !sB.stokes) continue;
+        const a = P(sA.stokes), b = P(sB.stokes);
+        const front = (a[2] + b[2]) / 2 > 0;
+        if (front !== near) continue;
+        ctx.strokeStyle = jetCss((i + 0.5) / SCAN_STEPS, near ? 0.95 : 0.45);
+        ctx.lineWidth = near ? 4 : 2.5;
+        ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke();
+      }
+    }
+
+    function drawRotationAxis(near) {
+      if (!scan) return;
+      const ax = scan.axisAt(Math.max(0, upTo));
+      for (const sgn of [1, -1]) {
+        const tip = [ax[0] * 1.18 * sgn, ax[1] * 1.18 * sgn, ax[2] * 1.18 * sgn];
+        const a = P([0, 0, 0]), b = P(tip);
+        if ((b[2] > 0) !== near) continue;
+        ctx.strokeStyle = near ? 'rgba(15,18,24,0.9)' : 'rgba(15,18,24,0.4)';
+        ctx.lineWidth = 2.4;
+        ctx.setLineDash([7, 5]);
+        ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke();
+        ctx.setLineDash([]);
+        if (sgn === 1) {
+          ctx.fillStyle = near ? 'rgba(15,18,24,0.92)' : 'rgba(15,18,24,0.45)';
+          ctx.beginPath(); ctx.arc(b[0], b[1], 4.2, 0, 2 * Math.PI); ctx.fill();
+        }
+      }
+    }
+
+    function drawStateMarkers(near) {
+      // input: open circle
+      if (inputS) {
+        const p = P(inputS);
+        if ((p[2] > 0) === near) {
+          ctx.strokeStyle = near ? 'rgba(71,85,105,0.95)' : 'rgba(71,85,105,0.45)';
+          ctx.lineWidth = 2.2;
+          ctx.beginPath(); ctx.arc(p[0], p[1], 6, 0, 2 * Math.PI); ctx.stroke();
+        }
+      }
+      // output: vector from the origin + filled dot
+      if (result.stokes) {
+        const p = P(result.stokes), o = P([0, 0, 0]);
+        if ((p[2] > 0) === near) {
+          ctx.strokeStyle = near ? 'rgba(10,12,16,0.95)' : 'rgba(10,12,16,0.4)';
+          ctx.lineWidth = 2.6;
+          ctx.beginPath(); ctx.moveTo(o[0], o[1]); ctx.lineTo(p[0], p[1]); ctx.stroke();
+          ctx.fillStyle = near ? '#0a0c10' : 'rgba(10,12,16,0.45)';
+          ctx.beginPath(); ctx.arc(p[0], p[1], 6.5, 0, 2 * Math.PI); ctx.fill();
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 1.6;
+          ctx.beginPath(); ctx.arc(p[0], p[1], 6.5, 0, 2 * Math.PI); ctx.stroke();
+        }
+      }
+    }
+
+    function drawLabels() {
+      ctx.font = '600 15px ui-sans-serif, system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      for (const al of AXIS_LABELS) {
+        const surf = P(al[1]);
+        const lab = P([al[1][0] * 1.14, al[1][1] * 1.14, al[1][2] * 1.14]);
+        const front = surf[2] > 0;
+        ctx.fillStyle = front ? 'rgba(40,48,64,0.95)' : 'rgba(40,48,64,0.38)';
+        ctx.beginPath(); ctx.arc(surf[0], surf[1], 2.8, 0, 2 * Math.PI); ctx.fill();
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = 'rgba(255,255,255,0.85)';
+        ctx.strokeText(al[0], lab[0], lab[1]);
+        ctx.fillStyle = front ? 'rgba(25,32,46,1)' : 'rgba(25,32,46,0.42)';
+        ctx.fillText(al[0], lab[0], lab[1]);
+      }
+    }
+
+    /* --- far hemisphere --- */
+    drawGrid(false);
+    drawTrace(false);
+    drawRotationAxis(false);
+    drawStateMarkers(false);
+
+    /* --- translucent body --- */
+    const g = ctx.createRadialGradient(cxs - 0.35 * Rs, cys - 0.38 * Rs, 0.12 * Rs, cxs, cys, Rs);
+    g.addColorStop(0, 'rgba(255,255,255,0.92)');
+    g.addColorStop(0.55, 'rgba(238,242,248,0.78)');
+    g.addColorStop(1, 'rgba(196,205,221,0.82)');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(cxs, cys, Rs, 0, 2 * Math.PI); ctx.fill();
+    ctx.strokeStyle = 'rgba(116,128,150,0.75)';
+    ctx.lineWidth = 1.4;
+    ctx.stroke();
+
+    /* --- near hemisphere --- */
+    drawGrid(true);
+    drawTrace(true);
+    drawRotationAxis(true);
+    drawStateMarkers(true);
+    drawLabels();
+  }
+
+  /* drag to orbit */
+  (function () {
+    let dragging = false, lastX = 0, lastY = 0;
+    canvas.addEventListener('pointerdown', function (e) {
+      dragging = true; lastX = e.clientX; lastY = e.clientY;
+      canvas.setPointerCapture(e.pointerId);
+      canvas.classList.add('grabbing');
+    });
+    canvas.addEventListener('pointermove', function (e) {
+      if (!dragging) return;
+      view.azim -= (e.clientX - lastX) * 0.4;
+      view.elev += (e.clientY - lastY) * 0.4;
+      view.elev = Math.max(-89, Math.min(89, view.elev));
+      lastX = e.clientX; lastY = e.clientY;
+      draw();
+    });
+    const stop = function (e) { dragging = false; canvas.classList.remove('grabbing'); };
+    canvas.addEventListener('pointerup', stop);
+    canvas.addEventListener('pointercancel', stop);
+  })();
+
+  /* =============================== scanning ============================== */
+
+  function paramLabel(comp, param) {
+    return param === 'phase' ? 'phase shift δ' : 'angle θ';
+  }
+
+  function compTitle(comp) {
+    const def = COMPONENT_DEFS[comp.type];
+    const idx = state.components.indexOf(comp) + 1;
+    return def.name + ' (element ' + idx + ')';
+  }
+
+  function computeScanSamples(comp, param) {
+    const samples = [];
+    for (let k = 0; k <= SCAN_STEPS; k++) {
+      const value = 360 * k / SCAN_STEPS;
+      samples.push(propagate(currentInputJones(), state.components,
+        { id: comp.id, param: param, value: value }));
+    }
+    return samples;
+  }
+
+  function scanAxisFn(comp, param) {
+    if (param === 'phase') {
+      const fixed = elementAxis(comp.angle);
+      return function () { return fixed; };
+    }
+    return function (idx) { return elementAxis(360 * idx / SCAN_STEPS); };
+  }
+
+  function cancelScan(restoreInput) {
+    if (state.scanAnim) {
+      cancelAnimationFrame(state.scanAnim.raf);
+      if (restoreInput !== false) restoreScannedInput(state.scanAnim);
+      state.scanAnim = null;
+    }
+  }
+
+  function restoreScannedInput(anim) {
+    const card = cardById(anim.comp.id);
+    if (!card) return;
+    const inp = card.querySelector('input[data-param="' + anim.param + '"]');
+    if (inp) { inp.value = anim.originalValue; inp.classList.remove('scanning'); }
+    card.classList.remove('scanning');
+  }
+
+  function startScan(comp, param) {
+    clearScanState();
+    const samples = computeScanSamples(comp, param);
+    const card = cardById(comp.id);
+    const inp = card ? card.querySelector('input[data-param="' + param + '"]') : null;
+    const anim = {
+      comp: comp, param: param,
+      samples: samples,
+      axisAt: scanAxisFn(comp, param),
+      idx: 0,
+      t0: performance.now(),
+      originalValue: inp ? inp.value : '',
+      raf: 0,
+      label: compTitle(comp) + ' — ' + paramLabel(comp, param)
+    };
+    state.scanAnim = anim;
+    if (card) card.classList.add('scanning');
+    if (inp) inp.classList.add('scanning');
+    showLegend(anim.label, true);
+
+    const tick = function (now) {
+      const progress = Math.min(1, (now - anim.t0) / SCAN_MS);
+      anim.idx = Math.round(progress * SCAN_STEPS);
+      const value = 360 * anim.idx / SCAN_STEPS;
+      if (inp) inp.value = value.toFixed(1);
+      updateReadouts(anim.samples[anim.idx]);
+      draw();
+      if (progress < 1) {
+        anim.raf = requestAnimationFrame(tick);
+      } else {
+        restoreScannedInput(anim);
+        state.scanAnim = null;
+        state.scanView = anim;          // freeze result at 360°
+        showLegend(anim.label, false);
+        draw();
+      }
+    };
+    anim.raf = requestAnimationFrame(tick);
+  }
+
+  function showLegend(label, running) {
+    legendEl.hidden = false;
+    legendLabel.textContent = label + ' [°]';
+    legendStatus.textContent = running
+      ? 'scanning 0° → 360° …'
+      : 'scan finished — shown at 360°. Change anything (or close) to return to the live view.';
+    const g = legendBar.getContext('2d');
+    const w = legendBar.width, h = legendBar.height;
+    for (let x = 0; x < w; x++) {
+      g.fillStyle = jetCss(x / (w - 1));
+      g.fillRect(x, 0, 1, h);
+    }
+  }
+
+  function clearScanState() {
+    cancelScan();
+    state.scanView = null;
+    legendEl.hidden = true;
+  }
+
+  /* Every user edit funnels through here: snap back to the live view. */
+  function mutated() {
+    clearScanState();
+    updateIcons();
+    updateReadouts(liveResult());
+    draw();
+  }
+
+  legendClose.addEventListener('click', function () { mutated(); });
+
+  /* ============================ bench / chain UI ========================= */
+
+  function cardById(id) {
+    return chainEl.querySelector('.comp-card[data-id="' + id + '"]');
+  }
+
+  function iconSvg(type) {
+    const def = COMPONENT_DEFS[type];
+    if (type === 'POL') {
+      return '<svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="14" fill="none" stroke="currentColor" stroke-width="2"/>' +
+        '<g class="axis-rot"><line x1="18" y1="5.5" x2="18" y2="30.5" stroke="currentColor" stroke-width="2.4"/>' +
+        '<line x1="11" y1="9" x2="11" y2="27" stroke="currentColor" stroke-width="1.2" opacity="0.55"/>' +
+        '<line x1="25" y1="9" x2="25" y2="27" stroke="currentColor" stroke-width="1.2" opacity="0.55"/></g></svg>';
+    }
+    const tag = type === 'HWP' ? 'λ/2' : type === 'QWP' ? 'λ/4' : 'δ';
+    return '<svg viewBox="0 0 36 36"><rect x="5" y="5" width="26" height="26" rx="5" fill="none" stroke="currentColor" stroke-width="2"/>' +
+      '<g class="axis-rot"><line x1="18" y1="6.5" x2="18" y2="29.5" stroke="currentColor" stroke-width="2.4"/>' +
+      '<polygon points="18,4.5 15.6,9 20.4,9" fill="currentColor"/></g>' +
+      '<text x="18" y="21" text-anchor="middle" font-size="9" font-weight="700" fill="currentColor" ' +
+      'style="paint-order:stroke" stroke="#fff" stroke-width="3">' + tag + '</text></svg>';
+  }
+
+  /* Rotate the fast-axis glyph with the set angle (positive = CCW from +x in
+     the lab; the icon's reference line points along +y, i.e. 90°). */
+  function updateIcons() {
+    for (const comp of state.components) {
+      const card = cardById(comp.id);
+      if (!card) continue;
+      const g = card.querySelector('.axis-rot');
+      if (g) g.setAttribute('transform', 'rotate(' + (90 - comp.angle) + ' 18 18)');
+    }
+  }
+
+  function addComponent(type, index) {
+    const def = COMPONENT_DEFS[type];
+    const comp = { id: nextId++, type: type, angle: 0 };
+    if (def.variableDelta) comp.phase = def.defaultDelta;
+    if (index == null || index < 0 || index > state.components.length) {
+      state.components.push(comp);
+    } else {
+      state.components.splice(index, 0, comp);
+    }
+    renderChain();
+    mutated();
+  }
+
+  function removeComponent(id) {
+    state.components = state.components.filter(function (c) { return c.id !== id; });
+    renderChain();
+    mutated();
+  }
+
+  function moveComponent(id, index) {
+    const from = state.components.findIndex(function (c) { return c.id === id; });
+    if (from < 0) return;
+    const comp = state.components.splice(from, 1)[0];
+    if (index > from) index--;
+    state.components.splice(index, 0, comp);
+    renderChain();
+    mutated();
+  }
+
+  function paramRow(comp, param, symbol, value) {
+    const row = document.createElement('div');
+    row.className = 'param-row';
+    const lab = document.createElement('label');
+    lab.textContent = symbol;
+    const inp = document.createElement('input');
+    inp.type = 'number';
+    inp.step = 'any';
+    inp.value = value;
+    inp.dataset.param = param;
+    inp.setAttribute('aria-label', symbol + ' of ' + COMPONENT_DEFS[comp.type].name);
+    inp.addEventListener('input', function () {
+      const v = parseFloat(inp.value);
+      comp[param === 'phase' ? 'phase' : 'angle'] = isFinite(v) ? v : 0;
+      mutated();
+    });
+    const unit = document.createElement('span');
+    unit.className = 'unit';
+    unit.textContent = '°';
+    const scanBtn = document.createElement('button');
+    scanBtn.type = 'button';
+    scanBtn.className = 'scan-btn';
+    scanBtn.textContent = 'Scan';
+    scanBtn.title = 'Animate ' + (param === 'phase' ? 'δ' : 'θ') + ' from 0° to 360° (3 s)';
+    scanBtn.addEventListener('click', function () { startScan(comp, param); });
+    row.append(lab, inp, unit, scanBtn);
+    return row;
+  }
+
+  function buildCard(comp) {
+    const def = COMPONENT_DEFS[comp.type];
+    const card = document.createElement('div');
+    card.className = 'comp-card';
+    card.dataset.id = comp.id;
+    card.style.setProperty('--accent', def.color);
+
+    const head = document.createElement('div');
+    head.className = 'comp-head';
+    head.draggable = true;
+    head.title = 'Drag to reorder';
+    const title = document.createElement('span');
+    title.textContent = def.name;
+    const rm = document.createElement('button');
+    rm.type = 'button';
+    rm.className = 'rm-btn';
+    rm.innerHTML = '&times;';
+    rm.title = 'Remove element';
+    rm.addEventListener('click', function () { removeComponent(comp.id); });
+    head.append(title, rm);
+
+    head.addEventListener('dragstart', function (e) {
+      e.dataTransfer.setData('text/plain', 'move:' + comp.id);
+      e.dataTransfer.effectAllowed = 'move';
+      card.classList.add('dragging');
+    });
+    head.addEventListener('dragend', function () {
+      card.classList.remove('dragging');
+      clearCaret();
+    });
+
+    const icon = document.createElement('div');
+    icon.className = 'comp-icon';
+    icon.innerHTML = iconSvg(comp.type);
+
+    card.append(head, icon);
+    card.append(paramRow(comp, 'angle', 'θ', comp.angle));
+    if (def.variableDelta) card.append(paramRow(comp, 'phase', 'δ', comp.phase));
+    return card;
+  }
+
+  function renderChain() {
+    chainEl.innerHTML = '';
+    for (const comp of state.components) chainEl.append(buildCard(comp));
+    chainEl.classList.toggle('empty', state.components.length === 0);
+    updateIcons();
+  }
+
+  /* ------------------------------- palette ------------------------------ */
+
+  for (const type in COMPONENT_DEFS) {
+    const def = COMPONENT_DEFS[type];
+    const item = document.createElement('div');
+    item.className = 'pal-item';
+    item.draggable = true;
+    item.style.setProperty('--accent', def.color);
+    item.innerHTML = '<div class="comp-icon">' + iconSvg(type) + '</div>' +
+      '<div class="pal-name">' + def.name + '</div><div class="pal-hint">drag onto the axis · click to append</div>';
+    item.addEventListener('dragstart', function (e) {
+      e.dataTransfer.setData('text/plain', 'new:' + type);
+      e.dataTransfer.effectAllowed = 'copy';
+    });
+    item.addEventListener('click', function () { addComponent(type); });
+    paletteEl.append(item);
+  }
+
+  /* ----------------------------- drop handling --------------------------- */
+
+  let caret = null;
+  function clearCaret() {
+    if (caret && caret.parentElement) caret.parentElement.removeChild(caret);
+    caret = null;
+  }
+
+  function dropIndex(e) {
+    const cards = Array.from(chainEl.querySelectorAll('.comp-card'));
+    for (let i = 0; i < cards.length; i++) {
+      const r = cards[i].getBoundingClientRect();
+      if (e.clientX < r.left + r.width / 2) return i;
+    }
+    return cards.length;
+  }
+
+  chainEl.addEventListener('dragover', function (e) {
+    e.preventDefault();
+    const idx = dropIndex(e);
+    if (!caret) { caret = document.createElement('div'); caret.className = 'drop-caret'; }
+    const cards = chainEl.querySelectorAll('.comp-card');
+    if (idx >= cards.length) chainEl.append(caret);
+    else chainEl.insertBefore(caret, cards[idx]);
+  });
+  chainEl.addEventListener('dragleave', function (e) {
+    if (!chainEl.contains(e.relatedTarget)) clearCaret();
+  });
+  chainEl.addEventListener('drop', function (e) {
+    e.preventDefault();
+    const idx = dropIndex(e);
+    clearCaret();
+    const data = e.dataTransfer.getData('text/plain') || '';
+    if (data.indexOf('new:') === 0) addComponent(data.slice(4), idx);
+    else if (data.indexOf('move:') === 0) moveComponent(parseInt(data.slice(5), 10), idx);
+  });
+
+  /* ----------------------------- input state ---------------------------- */
+
+  function setInput(key, jones) {
+    state.inputKey = key;
+    state.inputJones = jones;
+    inputSel.value = key;
+    mutated();
+  }
+
+  inputSel.addEventListener('change', function () {
+    const k = inputSel.value;
+    if (k === 'RND') setInput('RND', randomJones());
+    else setInput(k, BASIS[k].jones);
+  });
+  diceBtn.addEventListener('click', function () { setInput('RND', randomJones()); });
+
+  /* ------------------------------- presets ------------------------------ */
+
+  const PRESETS = [
+    {
+      id: 'blank', group: null, label: '— sandbox (empty bench) —',
+      input: 'H', comps: [], desc: ''
+    },
+    {
+      id: 's8-1', group: 'Übungsserie 8', label: '8.1 — Three polarizers A · B · C',
+      input: 'D',
+      comps: [{ type: 'POL', angle: 0 }, { type: 'POL', angle: 45 }, { type: 'POL', angle: 90 }],
+      scan: { index: 1, param: 'angle' },
+      desc: 'Crossed polarizers A (0°) and C (90°) with B in between (D input loses half its ' +
+        'intensity at A, like unpolarized light). While B is scanned, watch the transmitted ' +
+        'intensity: I ∝ sin²(2θ) after C — zero whenever B is parallel to A or C, maximal at 45°. ' +
+        'The output state itself is pinned to V (or extinguished).'
+    },
+    {
+      id: 's8-3c', group: 'Übungsserie 8', label: '8.3 c — Birefringent crystal on D (phase scan)',
+      input: 'D',
+      comps: [{ type: 'PS', angle: 0, phase: 90 }],
+      scan: { index: 0, param: 'phase' },
+      desc: 'The crystal with optical axis along x acts as diag(1, e^{iδ}) with δ = 2π(nₑ−n₀)d/λ. ' +
+        'Growing thickness d carries the diagonal input around the H–V axis: D → L → A → R → D. ' +
+        'At δ = 90° (d = 7.5 µm) the crystal is a quarter-wave plate.'
+    },
+    {
+      id: 's8-3e', group: 'Übungsserie 8', label: '8.3 e–g — Rotating-QWP polarimeter',
+      input: 'RND',
+      comps: [{ type: 'QWP', angle: 0 }, { type: 'POL', angle: 0 }],
+      scan: { index: 0, param: 'angle' },
+      desc: 'Classic polarimetry: an unknown (random) input passes a rotating λ/4 plate and a fixed ' +
+        'horizontal polarizer. The output is always H — but the intensity I(θ) read at a few angles ' +
+        '(e.g. 0°, 22.5°, 45°, 67.5°) determines all four Stokes parameters of the input. Re-roll with 🎲.'
+    },
+    {
+      id: 's9-1a', group: 'Übungsserie 9', label: '9.1 a — L through two parallel λ/4 plates',
+      input: 'L',
+      comps: [{ type: 'QWP', angle: 0 }, { type: 'QWP', angle: 0 }],
+      desc: 'Left-circular light: the first λ/4 plate (axis at 0°) makes it anti-diagonal (A), the ' +
+        'second turns it right-circular (R) — two quarter-wave plates act as one half-wave plate. ' +
+        'Remove one plate, or scan an angle, to explore.'
+    },
+    {
+      id: 's9-1b', group: 'Übungsserie 9', label: '9.1 b — second λ/4 plate at 45°',
+      input: 'L',
+      comps: [{ type: 'QWP', angle: 0 }, { type: 'QWP', angle: 45 }],
+      desc: 'After the first plate the light is linear at −45° (A) — parallel to the second plate\'s ' +
+        'axis. An eigenstate passes unchanged: only a global phase π/2 is added, the point on the ' +
+        'sphere stays at A.'
+    },
+    {
+      id: 's9-1c', group: 'Übungsserie 9', label: '9.1 c — second λ/4 plate at 90°',
+      input: 'L',
+      comps: [{ type: 'QWP', angle: 0 }, { type: 'QWP', angle: 90 }],
+      desc: 'The second plate is crossed with the first and undoes it: the output returns to ' +
+        'left-circular L (up to a global phase π/2). Crossed quarter-wave plates compensate.'
+    },
+    {
+      id: 's9-1e', group: 'Übungsserie 9', label: '9.1 e — Figure-8: rotating λ/4 on linear input',
+      input: 'H',
+      comps: [{ type: 'QWP', angle: 45 }],
+      scan: { index: 0, param: 'angle' },
+      desc: 'Scanning the λ/4-plate axis sweeps the output along a figure-8 whose crossing point is ' +
+        'the input state H; the lobes touch the poles when the plate sits at ±45°. Try a circular ' +
+        'input (L) instead — then the output stays linear and circles the equator.'
+    },
+    {
+      id: 's9-2a', group: 'Übungsserie 9', label: '9.2 a — LCD phase modulator on circular input',
+      input: 'L',
+      comps: [{ type: 'PS', angle: 0, phase: 0 }],
+      scan: { index: 0, param: 'phase' },
+      desc: 'The liquid-crystal modulator diag(e^{iφ}, e^{−iφ}) rotates the Poincaré sphere about ' +
+        'the H–V axis by the relative phase δ = 2φ (H and V are its eigenmodes — try them: nothing ' +
+        'moves). A circular input sweeps the great circle L → A → R → D.'
+    },
+    {
+      id: 's9-2b', group: 'Übungsserie 9', label: '9.2 b — Modulator between ±45° polarizers',
+      input: 'D',
+      comps: [{ type: 'POL', angle: 45 }, { type: 'PS', angle: 0, phase: 90 }, { type: 'POL', angle: 135 }],
+      scan: { index: 1, param: 'phase' },
+      desc: 'Between crossed ±45° polarizers the modulator turns phase into brightness: ' +
+        'I = sin²(δ/2) = sin²φ. Watch the intensity readout during the scan — dark at δ = 0°, fully ' +
+        'transmitting at δ = 180° (half-wave condition flips D to A). The output state is pinned at A.'
+    },
+    {
+      id: 's9-3', group: 'Übungsserie 9', label: '9.3 — λ/2 plate: rotation in the equator plane',
+      input: 'H',
+      comps: [{ type: 'HWP', angle: 22.5 }],
+      scan: { index: 0, param: 'angle' },
+      desc: 'A half-wave plate at angle φ takes linear light at 0° to linear light at 2φ — on the ' +
+        'sphere the output moves at 4φ, so a 360° scan laps the equator four times. Note: this is a ' +
+        '180° flip about the plate\'s own (moving) axis, not a rotation about the L/R axis — for ' +
+        'elliptical inputs it also mirrors the ellipticity (try input L).'
+    },
+    {
+      id: 's9-3x', group: 'Übungsserie 9', label: '9.3 Bonus — λ/2·λ/4·λ/2·λ/4·λ/2 universal gadget',
+      input: 'H',
+      comps: [
+        { type: 'HWP', angle: 15 }, { type: 'QWP', angle: 45 }, { type: 'HWP', angle: 30 },
+        { type: 'QWP', angle: 135 }, { type: 'HWP', angle: 10 }
+      ],
+      desc: 'Euler-angle construction: with the two λ/4 plates fixed at ±45°, the outer λ/2 plates ' +
+        'rotate within the equator plane while the sandwiched middle one rotates in the plane ' +
+        'spanned by H/V and L/R. The three free angles (α, β, γ) of the λ/2 plates realize any ' +
+        'rotation of the sphere — i.e. any lossless polarization transformation.'
+    }
+  ];
+
+  (function buildPresetSelect() {
+    let currentGroup = null, groupEl = null;
+    for (const p of PRESETS) {
+      const opt = document.createElement('option');
+      opt.value = p.id;
+      opt.textContent = p.label;
+      if (p.group) {
+        if (p.group !== currentGroup) {
+          groupEl = document.createElement('optgroup');
+          groupEl.label = p.group;
+          presetSel.append(groupEl);
+          currentGroup = p.group;
+        }
+        groupEl.append(opt);
+      } else {
+        presetSel.append(opt);
+      }
+    }
+  })();
+
+  function applyPreset(p) {
+    state.components = p.comps.map(function (c) {
+      const comp = { id: nextId++, type: c.type, angle: c.angle };
+      if (COMPONENT_DEFS[c.type].variableDelta) comp.phase = c.phase != null ? c.phase : COMPONENT_DEFS[c.type].defaultDelta;
+      return comp;
+    });
+    renderChain();
+    presetDesc.textContent = p.desc;
+    presetDesc.hidden = !p.desc;
+    if (p.input === 'RND') setInput('RND', randomJones());
+    else setInput(p.input, BASIS[p.input].jones);
+    if (p.scan && state.components[p.scan.index]) {
+      const comp = state.components[p.scan.index];
+      window.setTimeout(function () { startScan(comp, p.scan.param); }, 150);
+    }
+  }
+
+  presetSel.addEventListener('change', function () {
+    const p = PRESETS.find(function (q) { return q.id === presetSel.value; });
+    if (p) applyPreset(p);
+  });
+
+  /* -------------------------------- boot --------------------------------- */
+
+  window.addEventListener('resize', resizeCanvas);
+  renderChain();
+  updateReadouts(liveResult());
+  resizeCanvas();
+})();
