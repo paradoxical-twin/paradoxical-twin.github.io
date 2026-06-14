@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Poincaré Sphere Lab · Markus Leipe</title>
+  <meta name="description" content="Interactive Jones-calculus polarization simulator on the Poincaré sphere — companion to the Optik &amp; Wellen exercise sheets (Übungsserien 8 &amp; 9).">
+  <link rel="icon" href="/favicon.ico">
+  <link rel="stylesheet" href="poincare.css">
+</head>
+<body>
+
+<header class="top">
+  <a class="home" href="/">← Markus Leipe</a>
+  <div class="title-wrap">
+    <h1>Poincaré Sphere Lab</h1>
+    <p class="sub">Jones-calculus polarization simulator · companion to <em>Optik &amp; Wellen</em> Übungsserien 8 &amp; 9 (SoSe 2026)</p>
+  </div>
+</header>
+
+<main class="layout">
+
+  <section class="sphere-pane" aria-label="Poincaré sphere">
+    <canvas id="sphere"></canvas>
+    <div class="sphere-hint">drag to rotate</div>
+    <div id="scanLegend" class="scan-legend" hidden>
+      <div class="legend-top">
+        <span id="legendLabel"></span>
+        <button id="legendClose" type="button" title="Back to live view">&times;</button>
+      </div>
+      <canvas id="legendBar" width="360" height="12"></canvas>
+      <div class="legend-ticks"><span>0°</span><span>90°</span><span>180°</span><span>270°</span><span>360°</span></div>
+      <div id="legendStatus" class="legend-status"></div>
+    </div>
+  </section>
+
+  <aside class="side">
+
+    <div class="panel">
+      <h2>Exercise presets</h2>
+      <select id="presetSel" aria-label="Load an exercise preset"></select>
+      <p id="presetDesc" class="preset-desc" hidden></p>
+    </div>
+
+    <div class="panel">
+      <h2>State readout</h2>
+      <dl class="readout">
+        <dt>Input Jones vector <span class="mark-key">○</span></dt>
+        <dd id="roInput" class="mono"></dd>
+        <dt>Output Jones vector <span class="mark-key">●</span></dt>
+        <dd id="roOutput" class="mono"></dd>
+        <dt>Output Stokes (s₁, s₂, s₃)</dt>
+        <dd id="roStokes" class="mono"></dd>
+        <dt>Polarization ellipse</dt>
+        <dd id="roEllipse" class="mono"></dd>
+        <dt>Transmitted intensity I / I₀</dt>
+        <dd>
+          <div class="ibar-wrap"><div id="roIntensityBar" class="ibar"></div></div>
+          <span id="roIntensity" class="mono"></span>
+        </dd>
+      </dl>
+    </div>
+
+    <details class="panel conventions">
+      <summary>Conventions used here</summary>
+      <ul>
+        <li>|L⟩ = (1, i)/√2 is <b>left circular</b> and sits at the <b>north pole</b>: s₃ = (|E_L|² − |E_R|²)/S₀, exactly as in Aufgabe 8.2.</li>
+        <li>Wave plates at lab angle θ: M = R(θ)·diag(1, e^{iδ})·R(−θ), so λ/4 at 0° is diag(1, i) and λ/2 at 0° is diag(1, −1). The phase shifter is the birefringent crystal of Aufgabe 8.3 / the LC modulator of Aufgabe 9.2, with adjustable relative phase δ between the V and H components.</li>
+        <li>A lab angle θ appears at <b>2θ</b> on the sphere (angle doubling). A retarder rotates the sphere by δ about its eigenstate axis (cos 2θ, sin 2θ, 0) in the equator plane — the dashed line shown during scans.</li>
+        <li>Polarizers project onto their transmission axis; the state vector is renormalized afterwards (only fully polarized states are shown) while the lost light is tracked in the intensity readout — Malus’s law lives there.</li>
+        <li>Scan = the chosen angle (or phase) runs 0° → 360° in 3 s; the trace shows the <b>output of the whole bench</b>, colored by the scanned value.</li>
+      </ul>
+    </details>
+
+  </aside>
+
+</main>
+
+<section class="bench" aria-label="Optical bench">
+  <div class="bench-head">
+    <h2>Optical axis</h2>
+    <span class="bench-hint">light travels left → right · drag components onto the axis, drag card headers to reorder</span>
+  </div>
+
+  <div class="bench-row">
+    <div class="source-card">
+      <div class="src-title">Source</div>
+      <label class="src-label" for="inputSel">Input state</label>
+      <div class="src-controls">
+        <select id="inputSel" aria-label="Input polarization state">
+          <option value="H">H — horizontal</option>
+          <option value="V">V — vertical</option>
+          <option value="D">D — diagonal +45°</option>
+          <option value="A">A — anti-diagonal −45°</option>
+          <option value="L">L — left circular</option>
+          <option value="R">R — right circular</option>
+          <option value="RND">Random (fully polarized)</option>
+        </select>
+        <button id="dice" type="button" title="Draw a random fully polarized state">🎲</button>
+      </div>
+      <div class="beam-arrow">⟶</div>
+    </div>
+
+    <div id="chain" class="chain empty" data-empty-hint="drop λ/2, λ/4, δ or polarizer here"></div>
+
+    <div class="detector-card">
+      <div class="src-title">Detector</div>
+      <div class="det-val"><span id="detPct" class="mono">100.0%</span></div>
+      <div class="det-sub">of input intensity</div>
+    </div>
+  </div>
+
+  <div class="palette-wrap">
+    <h3>Components</h3>
+    <div id="palette" class="palette"></div>
+  </div>
+</section>
+
+<footer class="foot">
+  Conventions follow the <em>Optik &amp; Wellen</em> Musterlösungen (Serien 8–9). Built as a teaching aid — states are kept fully polarized; depolarization and partial coherence are out of scope for now.
+</footer>
+
+<noscript><p class="noscript">This simulator requires JavaScript.</p></noscript>
+<script src="poincare.js"></script>
+</body>
+</html>
