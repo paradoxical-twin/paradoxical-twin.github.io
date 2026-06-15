@@ -68,7 +68,7 @@
         <li>Wave plates at lab angle θ: M = R(θ)·diag(1, e^{iδ})·R(−θ), so λ/4 at 0° is diag(1, i) and λ/2 at 0° is diag(1, −1). The phase shifter is the birefringent crystal of Aufgabe 8.3 / the LC modulator of Aufgabe 9.2, with adjustable relative phase δ between the V and H components.</li>
         <li>A lab angle θ appears at <b>2θ</b> on the sphere (angle doubling). A retarder rotates the sphere by δ about its eigenstate axis (cos 2θ, sin 2θ, 0) in the equator plane — the dashed line shown during scans.</li>
         <li>Polarizers project onto their transmission axis; the state vector is renormalized afterwards (only fully polarized states are shown) while the lost light is tracked in the intensity readout — Malus’s law lives there.</li>
-        <li>Scan = the chosen angle (or phase) runs 0° → 360° in 3 s; the trace shows the <b>output of the whole bench</b>, colored by the scanned value.</li>
+        <li>Scan = the chosen angle (or phase) runs 0° → 360° in 6 s; the trace shows the <b>output of the whole bench</b>, colored by the scanned value. Wave-plate and polarizer <em>angles</em> act with a 180° period, so the colormap repeats every half-turn — the two laps share the same colors instead of overwriting each other.</li>
       </ul>
     </details>
 
@@ -77,43 +77,45 @@
 </main>
 
 <section class="bench" aria-label="Optical bench">
-  <div class="bench-head">
-    <h2>Optical axis</h2>
-    <span class="bench-hint">light travels left → right · drag components onto the axis, drag card headers to reorder</span>
-  </div>
+  <div class="bench-axis">
+    <div class="bench-head">
+      <h2>Optical axis</h2>
+      <span class="bench-hint">light travels left → right · drag components onto the axis, drag card headers to reorder</span>
+    </div>
 
-  <div class="bench-row">
-    <div class="source-card">
-      <div class="src-title">Source</div>
-      <label class="src-label" for="inputSel">Input state</label>
-      <div class="src-controls">
-        <select id="inputSel" aria-label="Input polarization state">
-          <option value="H">H — horizontal</option>
-          <option value="V">V — vertical</option>
-          <option value="D">D — diagonal +45°</option>
-          <option value="A">A — anti-diagonal −45°</option>
-          <option value="L">L — left circular</option>
-          <option value="R">R — right circular</option>
-          <option value="RND">Random (fully polarized)</option>
-        </select>
-        <button id="dice" type="button" title="Draw a random fully polarized state">🎲</button>
+    <div class="bench-row">
+      <div class="source-card">
+        <div class="src-title">Source</div>
+        <label class="src-label" for="inputSel">Input state</label>
+        <div class="src-controls">
+          <select id="inputSel" aria-label="Input polarization state">
+            <option value="H">H — horizontal</option>
+            <option value="V">V — vertical</option>
+            <option value="D">D — diagonal +45°</option>
+            <option value="A">A — anti-diagonal −45°</option>
+            <option value="L">L — left circular</option>
+            <option value="R">R — right circular</option>
+            <option value="RND">Random (fully polarized)</option>
+          </select>
+          <button id="dice" type="button" title="Draw a random fully polarized state">🎲</button>
+        </div>
+        <div class="beam-arrow">⟶</div>
       </div>
-      <div class="beam-arrow">⟶</div>
-    </div>
 
-    <div id="chain" class="chain empty" data-empty-hint="drop λ/2, λ/4, δ or polarizer here"></div>
+      <div id="chain" class="chain empty" data-empty-hint="drop λ/2, λ/4, δ or polarizer here"></div>
 
-    <div class="detector-card">
-      <div class="src-title">Detector</div>
-      <div class="det-val"><span id="detPct" class="mono">100.0%</span></div>
-      <div class="det-sub">of input intensity</div>
+      <div class="detector-card">
+        <div class="src-title">Detector</div>
+        <div class="det-val"><span id="detPct" class="mono">100.0%</span></div>
+        <div class="det-sub">of input intensity</div>
+      </div>
     </div>
   </div>
 
-  <div class="palette-wrap">
+  <aside class="palette-wrap">
     <h3>Components</h3>
     <div id="palette" class="palette"></div>
-  </div>
+  </aside>
 </section>
 
 <footer class="foot">

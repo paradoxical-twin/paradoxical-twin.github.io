@@ -127,13 +127,15 @@ const COMPONENT_DEFS = {
 
 function componentMatrix(comp, override) {
   const def = COMPONENT_DEFS[comp.type];
-  let angle = comp.angle, phase = comp.phase;
+  let angle = comp.angle, phase = comp.phase, retardScale = 1;
   if (override && override.id === comp.id) {
     if (override.param === 'angle') angle = override.value;
-    if (override.param === 'phase') phase = override.value;
+    else if (override.param === 'phase') phase = override.value;
+    else if (override.param === 'retardScale') retardScale = override.value;
   }
   if (def.kind === 'polarizer') return polarizerMatrix(angle);
-  return retarderMatrix(angle, def.variableDelta ? phase : def.delta);
+  const delta = (def.variableDelta ? phase : def.delta) * retardScale;
+  return retarderMatrix(angle, delta);
 }
 
 /* Eigenstate axis of an element with axis angle θ: equatorial, at 2θ. */
@@ -168,13 +170,54 @@ function jetCss(t, alpha) {
   return 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + (alpha == null ? 1 : alpha) + ')';
 }
 
+/* ===================== sphere-vector interpolation ====================== */
+
+function easeInOut(p) { p = Math.max(0, Math.min(1, p)); return p * p * (3 - 2 * p); }
+
+function stokesClose(a, b) {
+  if (!a || !b) return false;
+  const dx = a[0] - b[0], dy = a[1] - b[1], dz = a[2] - b[2];
+  return dx * dx + dy * dy + dz * dz < 1e-6;
+}
+
+/* Great-circle (slerp) interpolation between two unit Stokes vectors. */
+function slerpStokes(a, b, t) {
+  let d = a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+  d = Math.max(-1, Math.min(1, d));
+  if (d > 0.999999) return [b[0], b[1], b[2]];
+  if (d < -0.999999) {
+    // antipodal: geodesic is not unique — sweep through an arbitrary perpendicular
+    let p = Math.abs(a[2]) < 0.9 ? [0, 0, 1] : [0, 1, 0];
+    const pa = p[0] * a[0] + p[1] * a[1] + p[2] * a[2];
+    p = [p[0] - pa * a[0], p[1] - pa * a[1], p[2] - pa * a[2]];
+    const pn = Math.hypot(p[0], p[1], p[2]) || 1;
+    p = [p[0] / pn, p[1] / pn, p[2] / pn];
+    const ang = Math.PI * t, ca = Math.cos(ang), sa = Math.sin(ang);
+    return [a[0] * ca + p[0] * sa, a[1] * ca + p[1] * sa, a[2] * ca + p[2] * sa];
+  }
+  const om = Math.acos(d), so = Math.sin(om);
+  const k0 = Math.sin((1 - t) * om) / so, k1 = Math.sin(t * om) / so;
+  return [a[0] * k0 + b[0] * k1, a[1] * k0 + b[1] * k1, a[2] * k0 + b[2] * k1];
+}
+
+/* Interpolated bench result for the "component added" fly-in (slerp variant,
+   used when the new element collapses the state, e.g. a polarizer). */
+function slerpResult(fromRes, toRes, t) {
+  const s = slerpStokes(fromRes.stokes, toRes.stokes, t);
+  const I = fromRes.intensity + (toRes.intensity - fromRes.intensity) * t;
+  const root = Math.sqrt(Math.max(0, I));
+  const nv = jonesFromStokes(s);
+  return { stokes: s, intensity: I, jones: [cscale(nv[0], root), cscale(nv[1], root)] };
+}
+
 /* Export the pure physics for node-based self tests; the rest is DOM-only. */
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     cx, cadd, cmul, cabs2, matMul, matVec, rotMat, retarderMatrix,
     polarizerMatrix, stokesOf, jonesFromStokes, jonesFromPsiChi,
     normalizeJones, canonicalJones, randomJones, propagate,
-    componentMatrix, elementAxis, BASIS, COMPONENT_DEFS, jet
+    componentMatrix, elementAxis, BASIS, COMPONENT_DEFS, jet,
+    slerpStokes, slerpResult, easeInOut, stokesClose
   };
 }
 
@@ -182,8 +225,9 @@ if (typeof module !== 'undefined' && module.exports) {
 
 if (typeof document !== 'undefined') (function () {
 
-  const SCAN_MS = 3000;
+  const SCAN_MS = 6000;            // full 0…360° scan duration
   const SCAN_STEPS = 720;          // 0.5° resolution, 0…360°
+  const TRANSITION_MS = 3000;      // fly-in when a component is dropped in
 
   /* ------------------------------ app state ----------------------------- */
 
@@ -193,7 +237,8 @@ if (typeof document !== 'undefined') (function () {
     inputJones: BASIS.H.jones,
     components: [],                // {id, type, angle, phase?}
     scanAnim: null,                // running scan animation
-    scanView: null                 // frozen scan result (survives until any edit)
+    scanView: null,                // frozen scan result (survives until any edit)
+    transition: null               // running "component added" fly-in
   };
 
   function currentInputJones() { return state.inputJones; }
@@ -352,8 +397,13 @@ if (typeof document !== 'undefined') (function () {
     };
 
     const scan = state.scanAnim || state.scanView;
-    const upTo = state.scanAnim ? state.scanAnim.idx : (state.scanView ? SCAN_STEPS : -1);
-    const result = scan ? scan.samples[Math.max(0, upTo)] : liveResult();
+    const upTo = state.scanAnim
+      ? Math.max(0, Math.min(SCAN_STEPS, state.scanAnim.idx))
+      : (state.scanView ? SCAN_STEPS : -1);
+    let result;
+    if (state.transition) result = state.transition.current;
+    else if (scan) result = scan.samples[Math.max(0, upTo)];
+    else result = liveResult();
     const inputS = stokesOf(currentInputJones());
 
     function drawPolyline(pts, near, style) {
@@ -396,13 +446,18 @@ if (typeof document !== 'undefined') (function () {
     function drawTrace(near) {
       if (!scan || upTo < 1) return;
       const samples = scan.samples;
-      for (let i = 0; i < upTo; i++) {
+      const periods = scan.colorPeriods || 1;   // 2 for angle scans, 1 for phase
+      const end = Math.min(upTo, SCAN_STEPS);
+      for (let i = 0; i < end; i++) {
         const sA = samples[i], sB = samples[i + 1];
-        if (!sA.stokes || !sB.stokes) continue;
+        if (!sA || !sB || !sA.stokes || !sB.stokes) continue;
         const a = P(sA.stokes), b = P(sB.stokes);
         const front = (a[2] + b[2]) / 2 > 0;
         if (front !== near) continue;
-        ctx.strokeStyle = jetCss((i + 0.5) / SCAN_STEPS, near ? 0.95 : 0.45);
+        // periodic colour: the second half of an angle scan retraces the first,
+        // so it is painted in the very same colours (no clashing overwrite).
+        const colorT = (((i + 0.5) / SCAN_STEPS) * periods) % 1;
+        ctx.strokeStyle = jetCss(colorT, near ? 0.95 : 0.5);
         ctx.lineWidth = near ? 4 : 2.5;
         ctx.lineCap = 'round';
         ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke();
@@ -428,29 +483,31 @@ if (typeof document !== 'undefined') (function () {
       }
     }
 
-    function drawStateMarkers(near) {
-      // input: open circle
+    /*
+     * The input ○ and output ● markers are drawn in a single pass *on top* of
+     * the whole sphere. On the far hemisphere they keep a strong colour and a
+     * bright halo (instead of fading into the frosted body and the grid), so
+     * the state vector stays legible whichever way the sphere is turned.
+     */
+    function drawStateMarkersTop() {
+      // input: open circle ○
       if (inputS) {
-        const p = P(inputS);
-        if ((p[2] > 0) === near) {
-          ctx.strokeStyle = near ? 'rgba(71,85,105,0.95)' : 'rgba(71,85,105,0.45)';
-          ctx.lineWidth = 2.2;
-          ctx.beginPath(); ctx.arc(p[0], p[1], 6, 0, 2 * Math.PI); ctx.stroke();
-        }
+        const p = P(inputS), near = p[2] >= 0;
+        ctx.strokeStyle = near ? 'rgba(71,85,105,0.95)' : 'rgba(71,85,105,0.62)';
+        ctx.lineWidth = near ? 2.2 : 2;
+        ctx.beginPath(); ctx.arc(p[0], p[1], 6, 0, 2 * Math.PI); ctx.stroke();
       }
-      // output: vector from the origin + filled dot
+      // output: vector from the origin + filled dot ●
       if (result.stokes) {
-        const p = P(result.stokes), o = P([0, 0, 0]);
-        if ((p[2] > 0) === near) {
-          ctx.strokeStyle = near ? 'rgba(10,12,16,0.95)' : 'rgba(10,12,16,0.4)';
-          ctx.lineWidth = 2.6;
-          ctx.beginPath(); ctx.moveTo(o[0], o[1]); ctx.lineTo(p[0], p[1]); ctx.stroke();
-          ctx.fillStyle = near ? '#0a0c10' : 'rgba(10,12,16,0.45)';
-          ctx.beginPath(); ctx.arc(p[0], p[1], 6.5, 0, 2 * Math.PI); ctx.fill();
-          ctx.strokeStyle = '#ffffff';
-          ctx.lineWidth = 1.6;
-          ctx.beginPath(); ctx.arc(p[0], p[1], 6.5, 0, 2 * Math.PI); ctx.stroke();
-        }
+        const p = P(result.stokes), o = P([0, 0, 0]), near = p[2] >= 0;
+        ctx.strokeStyle = near ? 'rgba(10,12,16,0.95)' : 'rgba(10,12,16,0.6)';
+        ctx.lineWidth = 2.6;
+        ctx.beginPath(); ctx.moveTo(o[0], o[1]); ctx.lineTo(p[0], p[1]); ctx.stroke();
+        ctx.fillStyle = near ? '#0a0c10' : 'rgba(10,12,16,0.62)';
+        ctx.beginPath(); ctx.arc(p[0], p[1], 6.5, 0, 2 * Math.PI); ctx.fill();
+        ctx.strokeStyle = near ? '#ffffff' : 'rgba(255,255,255,0.9)';
+        ctx.lineWidth = near ? 1.6 : 2.2;
+        ctx.beginPath(); ctx.arc(p[0], p[1], 6.5, 0, 2 * Math.PI); ctx.stroke();
       }
     }
 
@@ -476,7 +533,6 @@ if (typeof document !== 'undefined') (function () {
     drawGrid(false);
     drawTrace(false);
     drawRotationAxis(false);
-    drawStateMarkers(false);
 
     /* --- translucent body --- */
     const g = ctx.createRadialGradient(cxs - 0.35 * Rs, cys - 0.38 * Rs, 0.12 * Rs, cxs, cys, Rs);
@@ -493,8 +549,10 @@ if (typeof document !== 'undefined') (function () {
     drawGrid(true);
     drawTrace(true);
     drawRotationAxis(true);
-    drawStateMarkers(true);
     drawLabels();
+
+    /* --- markers always on top, so the far side stays visible --- */
+    drawStateMarkersTop();
   }
 
   /* drag to orbit */
@@ -573,8 +631,9 @@ if (typeof document !== 'undefined') (function () {
       comp: comp, param: param,
       samples: samples,
       axisAt: scanAxisFn(comp, param),
+      colorPeriods: param === 'phase' ? 1 : 2,  // angle scans repeat every 180°
       idx: 0,
-      t0: performance.now(),
+      t0: null,                         // stamped on the first animation frame
       originalValue: inp ? inp.value : '',
       raf: 0,
       label: compTitle(comp) + ' — ' + paramLabel(comp, param)
@@ -582,11 +641,12 @@ if (typeof document !== 'undefined') (function () {
     state.scanAnim = anim;
     if (card) card.classList.add('scanning');
     if (inp) inp.classList.add('scanning');
-    showLegend(anim.label, true);
+    showLegend(anim, true);
 
     const tick = function (now) {
-      const progress = Math.min(1, (now - anim.t0) / SCAN_MS);
-      anim.idx = Math.round(progress * SCAN_STEPS);
+      if (anim.t0 == null) anim.t0 = now;
+      const progress = Math.min(1, Math.max(0, (now - anim.t0) / SCAN_MS));
+      anim.idx = Math.max(0, Math.min(SCAN_STEPS, Math.round(progress * SCAN_STEPS)));
       const value = 360 * anim.idx / SCAN_STEPS;
       if (inp) inp.value = value.toFixed(1);
       updateReadouts(anim.samples[anim.idx]);
@@ -597,31 +657,70 @@ if (typeof document !== 'undefined') (function () {
         restoreScannedInput(anim);
         state.scanAnim = null;
         state.scanView = anim;          // freeze result at 360°
-        showLegend(anim.label, false);
+        showLegend(anim, false);
         draw();
       }
     };
     anim.raf = requestAnimationFrame(tick);
   }
 
-  function showLegend(label, running) {
+  function showLegend(anim, running) {
     legendEl.hidden = false;
-    legendLabel.textContent = label + ' [°]';
+    legendLabel.textContent = anim.label + ' [°]';
     legendStatus.textContent = running
       ? 'scanning 0° → 360° …'
       : 'scan finished — shown at 360°. Change anything (or close) to return to the live view.';
+    const periods = anim.colorPeriods || 1;
     const g = legendBar.getContext('2d');
     const w = legendBar.width, h = legendBar.height;
     for (let x = 0; x < w; x++) {
-      g.fillStyle = jetCss(x / (w - 1));
+      g.fillStyle = jetCss(((x / (w - 1)) * periods) % 1);
       g.fillRect(x, 0, 1, h);
     }
   }
 
   function clearScanState() {
     cancelScan();
+    cancelTransition();
     state.scanView = null;
     legendEl.hidden = true;
+  }
+
+  /* ===================== component fly-in transitions ==================== */
+
+  function cancelTransition() {
+    if (state.transition) {
+      cancelAnimationFrame(state.transition.raf);
+      state.transition = null;
+    }
+  }
+
+  /*
+   * Animate the displayed output state through a sequence of intermediate
+   * results so the marker visibly glides to its new home instead of jumping.
+   * `sampleAt(f)` maps f∈[0,1] (already eased) to a propagation result.
+   */
+  function runTransition(sampleAt) {
+    cancelTransition();
+    const anim = { t0: null, raf: 0, current: sampleAt(0) };
+    state.transition = anim;
+    updateReadouts(anim.current);
+    draw();
+    const tick = function (now) {
+      if (anim.t0 == null) anim.t0 = now;
+      const p = Math.min(1, Math.max(0, (now - anim.t0) / TRANSITION_MS));
+      anim.current = sampleAt(easeInOut(p));
+      updateReadouts(anim.current);
+      draw();
+      if (p < 1) {
+        anim.raf = requestAnimationFrame(tick);
+      } else {
+        state.transition = null;
+        updateReadouts(liveResult());
+        draw();
+      }
+    };
+    anim.raf = requestAnimationFrame(tick);
   }
 
   /* Every user edit funnels through here: snap back to the live view. */
@@ -669,6 +768,7 @@ if (typeof document !== 'undefined') (function () {
 
   function addComponent(type, index) {
     const def = COMPONENT_DEFS[type];
+    const fromResult = liveResult();            // bench output before the drop
     const comp = { id: nextId++, type: type, angle: 0 };
     if (def.variableDelta) comp.phase = def.defaultDelta;
     if (index == null || index < 0 || index > state.components.length) {
@@ -677,7 +777,24 @@ if (typeof document !== 'undefined') (function () {
       state.components.splice(index, 0, comp);
     }
     renderChain();
-    mutated();
+    clearScanState();                           // a new element leaves any scan view
+    const toResult = liveResult();              // bench output after the drop
+    const moved = fromResult.stokes && toResult.stokes &&
+      !stokesClose(fromResult.stokes, toResult.stokes);
+    if (moved && def.kind === 'retarder') {
+      // ramp the new plate's retardance 0 → full: the marker follows the true
+      // rotation about the element's eigen-axis (identity at scale 0).
+      runTransition(function (f) {
+        return propagate(currentInputJones(), state.components,
+          { id: comp.id, param: 'retardScale', value: f });
+      });
+    } else if (moved) {
+      // a polarizer projects rather than rotates — glide along the great circle.
+      runTransition(function (f) { return slerpResult(fromResult, toResult, f); });
+    } else {
+      updateReadouts(toResult);
+      draw();
+    }
   }
 
   function removeComponent(id) {
@@ -719,7 +836,7 @@ if (typeof document !== 'undefined') (function () {
     scanBtn.type = 'button';
     scanBtn.className = 'scan-btn';
     scanBtn.textContent = 'Scan';
-    scanBtn.title = 'Animate ' + (param === 'phase' ? 'δ' : 'θ') + ' from 0° to 360° (3 s)';
+    scanBtn.title = 'Animate ' + (param === 'phase' ? 'δ' : 'θ') + ' from 0° to 360° (6 s)';
     scanBtn.addEventListener('click', function () { startScan(comp, param); });
     row.append(lab, inp, unit, scanBtn);
     return row;
