@@ -225,9 +225,9 @@ if (typeof module !== 'undefined' && module.exports) {
 
 if (typeof document !== 'undefined') (function () {
 
-  const SCAN_MS = 6000;            // full 0…360° scan duration
-  const SCAN_STEPS = 720;          // 0.5° resolution, 0…360°
-  const TRANSITION_MS = 3000;      // fly-in when a component is dropped in
+  const SCAN_MS = 6000;            // full scan duration (angle: 0…180°, phase: 0…360°)
+  const SCAN_STEPS = 720;          // sample resolution across the scan range
+  const TRANSITION_MS = 2308;      // fly-in when a component is dropped in (≈30% faster than 3 s)
 
   /* ------------------------------ app state ----------------------------- */
 
@@ -256,9 +256,14 @@ if (typeof document !== 'undefined') (function () {
   const paletteEl = $('palette');
   const legendEl = $('scanLegend');
   const legendBar = $('legendBar');
+  const legendColormap = $('legendColormap');
+  const legendGraph = $('legendGraph');
+  const legendPlot = $('legendPlot');
+  const legendTicks = $('legendTicks');
   const legendLabel = $('legendLabel');
   const legendClose = $('legendClose');
   const legendStatus = $('legendStatus');
+  const markerAxisRow = $('mlAxisRow');
   const inputSel = $('inputSel');
   const diceBtn = $('dice');
   const presetSel = $('presetSel');
@@ -446,7 +451,6 @@ if (typeof document !== 'undefined') (function () {
     function drawTrace(near) {
       if (!scan || upTo < 1) return;
       const samples = scan.samples;
-      const periods = scan.colorPeriods || 1;   // 2 for angle scans, 1 for phase
       const end = Math.min(upTo, SCAN_STEPS);
       for (let i = 0; i < end; i++) {
         const sA = samples[i], sB = samples[i + 1];
@@ -454,9 +458,8 @@ if (typeof document !== 'undefined') (function () {
         const a = P(sA.stokes), b = P(sB.stokes);
         const front = (a[2] + b[2]) / 2 > 0;
         if (front !== near) continue;
-        // periodic colour: the second half of an angle scan retraces the first,
-        // so it is painted in the very same colours (no clashing overwrite).
-        const colorT = (((i + 0.5) / SCAN_STEPS) * periods) % 1;
+        // the scan covers exactly one period, so colour runs once across it
+        const colorT = (i + 0.5) / SCAN_STEPS;
         ctx.strokeStyle = jetCss(colorT, near ? 0.95 : 0.5);
         ctx.lineWidth = near ? 4 : 2.5;
         ctx.lineCap = 'round';
@@ -588,22 +591,22 @@ if (typeof document !== 'undefined') (function () {
     return def.name + ' (element ' + idx + ')';
   }
 
-  function computeScanSamples(comp, param) {
+  function computeScanSamples(comp, param, span) {
     const samples = [];
     for (let k = 0; k <= SCAN_STEPS; k++) {
-      const value = 360 * k / SCAN_STEPS;
+      const value = span * k / SCAN_STEPS;
       samples.push(propagate(currentInputJones(), state.components,
         { id: comp.id, param: param, value: value }));
     }
     return samples;
   }
 
-  function scanAxisFn(comp, param) {
+  function scanAxisFn(comp, param, span) {
     if (param === 'phase') {
       const fixed = elementAxis(comp.angle);
       return function () { return fixed; };
     }
-    return function (idx) { return elementAxis(360 * idx / SCAN_STEPS); };
+    return function (idx) { return elementAxis(span * idx / SCAN_STEPS); };
   }
 
   function cancelScan(restoreInput) {
@@ -624,14 +627,18 @@ if (typeof document !== 'undefined') (function () {
 
   function startScan(comp, param) {
     clearScanState();
-    const samples = computeScanSamples(comp, param);
+    // wave-plate / polarizer angles are 180°-periodic, so an angle scan only
+    // needs a half-turn; a phase shift δ needs the full 0…360°.
+    const span = param === 'phase' ? 360 : 180;
+    const samples = computeScanSamples(comp, param, span);
     const card = cardById(comp.id);
     const inp = card ? card.querySelector('input[data-param="' + param + '"]') : null;
     const anim = {
       comp: comp, param: param,
       samples: samples,
-      axisAt: scanAxisFn(comp, param),
-      colorPeriods: param === 'phase' ? 1 : 2,  // angle scans repeat every 180°
+      span: span,
+      isPolarizer: COMPONENT_DEFS[comp.type].kind === 'polarizer',
+      axisAt: scanAxisFn(comp, param, span),
       idx: 0,
       t0: null,                         // stamped on the first animation frame
       originalValue: inp ? inp.value : '',
@@ -641,13 +648,14 @@ if (typeof document !== 'undefined') (function () {
     state.scanAnim = anim;
     if (card) card.classList.add('scanning');
     if (inp) inp.classList.add('scanning');
+    markerAxisRow.hidden = false;       // the dashed rotation axis is now on screen
     showLegend(anim, true);
 
     const tick = function (now) {
       if (anim.t0 == null) anim.t0 = now;
       const progress = Math.min(1, Math.max(0, (now - anim.t0) / SCAN_MS));
       anim.idx = Math.max(0, Math.min(SCAN_STEPS, Math.round(progress * SCAN_STEPS)));
-      const value = 360 * anim.idx / SCAN_STEPS;
+      const value = span * anim.idx / SCAN_STEPS;
       if (inp) inp.value = value.toFixed(1);
       updateReadouts(anim.samples[anim.idx]);
       draw();
@@ -656,7 +664,7 @@ if (typeof document !== 'undefined') (function () {
       } else {
         restoreScannedInput(anim);
         state.scanAnim = null;
-        state.scanView = anim;          // freeze result at 360°
+        state.scanView = anim;          // freeze result at the end of the scan
         showLegend(anim, false);
         draw();
       }
@@ -666,16 +674,92 @@ if (typeof document !== 'undefined') (function () {
 
   function showLegend(anim, running) {
     legendEl.hidden = false;
-    legendLabel.textContent = anim.label + ' [°]';
+    const endTxt = anim.span + '°';
     legendStatus.textContent = running
-      ? 'scanning 0° → 360° …'
-      : 'scan finished — shown at 360°. Change anything (or close) to return to the live view.';
-    const periods = anim.colorPeriods || 1;
+      ? 'scanning 0° → ' + endTxt + ' …'
+      : 'scan finished — shown at ' + endTxt + '. Change anything (or close) to return to the live view.';
+    if (anim.isPolarizer) {
+      // a polarizer projects rather than rotates — the interesting quantity is
+      // the transmitted intensity, so the colour key gives way to a Malus plot.
+      legendLabel.textContent = compTitle(anim.comp) + ' — output I / I₀ vs θ';
+      drawIntensityPlot(anim.samples, anim.span);
+    } else {
+      legendLabel.textContent = anim.label + ' [°]';
+      drawColorbar(anim.span);
+    }
+  }
+
+  function setLegendTicks(span) {
+    legendTicks.innerHTML = '';
+    for (const f of [0, 0.25, 0.5, 0.75, 1]) {
+      const s = document.createElement('span');
+      s.textContent = Math.round(span * f) + '°';
+      legendTicks.append(s);
+    }
+  }
+
+  function drawColorbar(span) {
+    legendColormap.hidden = false;
+    legendGraph.hidden = true;
+    legendTicks.hidden = false;
+    setLegendTicks(span);
     const g = legendBar.getContext('2d');
     const w = legendBar.width, h = legendBar.height;
     for (let x = 0; x < w; x++) {
-      g.fillStyle = jetCss(((x / (w - 1)) * periods) % 1);
+      g.fillStyle = jetCss(x / (w - 1));
       g.fillRect(x, 0, 1, h);
+    }
+  }
+
+  /* Transmitted intensity I/I₀ versus the scanned polarizer angle. The curve is
+     coloured with the same jet map as the sphere trace, so it doubles as the
+     colour key the colorbar would otherwise provide. */
+  function drawIntensityPlot(samples, span) {
+    legendColormap.hidden = true;
+    legendGraph.hidden = false;
+    legendTicks.hidden = true;            // this plot carries its own angle axis
+    const g = legendPlot.getContext('2d');
+    const w = legendPlot.width, h = legendPlot.height;
+    g.clearRect(0, 0, w, h);
+    // the box title ("output I / I₀ vs θ") already names both axes, so the
+    // plot only needs numeric ticks.
+    const padL = 34, padR = 14, padT = 12, padB = 30;
+    const x0 = padL, x1 = w - padR, y0 = padT, y1 = h - padB;
+    const pw = x1 - x0, ph = y1 - y0;
+
+    // horizontal gridlines + intensity labels (0, 0.5, 1)
+    g.lineWidth = 1.5;
+    g.font = '500 16px ui-sans-serif, system-ui, sans-serif';
+    g.textAlign = 'right'; g.textBaseline = 'middle';
+    for (const v of [0, 0.5, 1]) {
+      const y = y1 - v * ph;
+      g.strokeStyle = v === 0 ? 'rgba(120,130,150,0.5)' : 'rgba(120,130,150,0.2)';
+      g.beginPath(); g.moveTo(x0, y); g.lineTo(x1, y); g.stroke();
+      g.fillStyle = 'rgba(91,102,119,0.95)';
+      g.fillText(v.toFixed(1), x0 - 6, y);
+    }
+    // x-axis with angle ticks (end labels aligned inward so they never clip)
+    g.strokeStyle = 'rgba(120,130,150,0.5)';
+    g.lineWidth = 1.5;
+    g.beginPath(); g.moveTo(x0, y1); g.lineTo(x1, y1); g.stroke();
+    g.fillStyle = 'rgba(91,102,119,0.95)';
+    g.font = '500 15px ui-sans-serif, system-ui, sans-serif';
+    g.textBaseline = 'top';
+    for (const f of [0, 0.25, 0.5, 0.75, 1]) {
+      g.textAlign = f === 0 ? 'left' : f === 1 ? 'right' : 'center';
+      g.fillText(Math.round(span * f) + '°', x0 + f * pw, y1 + 7);
+    }
+    // the intensity curve
+    g.lineWidth = 3;
+    g.lineJoin = 'round'; g.lineCap = 'round';
+    const n = samples.length;
+    for (let i = 0; i < n - 1; i++) {
+      const iA = Math.max(0, Math.min(1, samples[i].intensity || 0));
+      const iB = Math.max(0, Math.min(1, samples[i + 1].intensity || 0));
+      const xA = x0 + pw * i / (n - 1), yA = y1 - iA * ph;
+      const xB = x0 + pw * (i + 1) / (n - 1), yB = y1 - iB * ph;
+      g.strokeStyle = jetCss((i + 0.5) / (n - 1), 0.95);
+      g.beginPath(); g.moveTo(xA, yA); g.lineTo(xB, yB); g.stroke();
     }
   }
 
@@ -684,6 +768,7 @@ if (typeof document !== 'undefined') (function () {
     cancelTransition();
     state.scanView = null;
     legendEl.hidden = true;
+    markerAxisRow.hidden = true;
   }
 
   /* ===================== component fly-in transitions ==================== */
@@ -836,7 +921,7 @@ if (typeof document !== 'undefined') (function () {
     scanBtn.type = 'button';
     scanBtn.className = 'scan-btn';
     scanBtn.textContent = 'Scan';
-    scanBtn.title = 'Animate ' + (param === 'phase' ? 'δ' : 'θ') + ' from 0° to 360° (6 s)';
+    scanBtn.title = 'Animate ' + (param === 'phase' ? 'δ from 0° to 360°' : 'θ from 0° to 180°') + ' (6 s)';
     scanBtn.addEventListener('click', function () { startScan(comp, param); });
     row.append(lab, inp, unit, scanBtn);
     return row;
@@ -899,7 +984,7 @@ if (typeof document !== 'undefined') (function () {
     item.draggable = true;
     item.style.setProperty('--accent', def.color);
     item.innerHTML = '<div class="comp-icon">' + iconSvg(type) + '</div>' +
-      '<div class="pal-name">' + def.name + '</div><div class="pal-hint">drag onto the axis · click to append</div>';
+      '<div class="pal-name">' + def.name + '</div><div class="pal-hint">drag in or click to add</div>';
     item.addEventListener('dragstart', function (e) {
       e.dataTransfer.setData('text/plain', 'new:' + type);
       e.dataTransfer.effectAllowed = 'copy';
@@ -1052,7 +1137,7 @@ if (typeof document !== 'undefined') (function () {
       comps: [{ type: 'HWP', angle: 22.5 }],
       scan: { index: 0, param: 'angle' },
       desc: 'A half-wave plate at angle φ takes linear light at 0° to linear light at 2φ — on the ' +
-        'sphere the output moves at 4φ, so a 360° scan laps the equator four times. Note: this is a ' +
+        'sphere the output moves at 4φ, so a full 0°→180° scan laps the equator twice. Note: this is a ' +
         '180° flip about the plate\'s own (moving) axis, not a rotation about the L/R axis — for ' +
         'elliptical inputs it also mirrors the ellipticity (try input L).'
     },
