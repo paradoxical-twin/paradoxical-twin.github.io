@@ -253,13 +253,12 @@ if (typeof document !== 'undefined') (function () {
     return propagate(currentInputJones(), activeComponents(), null);
   }
 
-  /* The transmitted intensity only moves across a scan when some polarizer
-     actually clips the scan-dependent beam — i.e. a polarizer sits at (or
-     downstream of) the scanned element. Everything from the scanned element
-     onward is otherwise unitary, so I/I₀ stays pinned and a Malus plot would be
-     a useless flat line. We read this straight off the computed samples, which
-     also correctly keeps the colour key for a polarizer that sits *before* the
-     scanned element, or one scanned on circular light (constant ½). */
+  /* True when the transmitted intensity actually moves across the scan. Used to
+     decide whether a scan earns the I/I₀ (Malus) plot instead of the colour
+     key: everything from the scanned element onward is unitary unless a
+     polarizer downstream clips the scan-dependent beam, so this stays false for
+     a polarizer placed *before* the scanned element. (Scanning a polarizer
+     itself always gets the plot — see startScan — even when I/I₀ is flat.) */
   function intensityVaries(samples) {
     let lo = Infinity, hi = -Infinity;
     for (let i = 0; i < samples.length; i++) {
@@ -725,7 +724,10 @@ if (typeof document !== 'undefined') (function () {
       comp: comp, param: param,
       samples: samples,
       span: span,
-      showIntensity: intensityVaries(samples),
+      // a polarizer scan always earns the Malus plot — even a flat ½ on
+      // circular light is the expected, instructive result; for anything else
+      // show it only when the scan actually moves the transmitted intensity.
+      showIntensity: COMPONENT_DEFS[comp.type].kind === 'polarizer' || intensityVaries(samples),
       axisAt: scanAxisFn(comp, param, span),
       idx: 0,
       t0: null,                         // stamped on the first animation frame
