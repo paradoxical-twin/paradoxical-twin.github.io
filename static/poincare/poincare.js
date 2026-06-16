@@ -243,8 +243,30 @@ if (typeof document !== 'undefined') (function () {
 
   function currentInputJones() { return state.inputJones; }
 
+  /* The beam only "sees" components that are not hidden; a hidden element keeps
+     its settings but is bypassed (left out of the Jones product entirely). */
+  function activeComponents() {
+    return state.components.filter(function (c) { return !c.hidden; });
+  }
+
   function liveResult() {
-    return propagate(currentInputJones(), state.components, null);
+    return propagate(currentInputJones(), activeComponents(), null);
+  }
+
+  /* True when the transmitted intensity actually moves across the scan. Used to
+     decide whether a scan earns the I/I₀ (Malus) plot instead of the colour
+     key: everything from the scanned element onward is unitary unless a
+     polarizer downstream clips the scan-dependent beam, so this stays false for
+     a polarizer placed *before* the scanned element. (Scanning a polarizer
+     itself always gets the plot — see startScan — even when I/I₀ is flat.) */
+  function intensityVaries(samples) {
+    let lo = Infinity, hi = -Infinity;
+    for (let i = 0; i < samples.length; i++) {
+      const I = samples[i].intensity || 0;
+      if (I < lo) lo = I;
+      if (I > hi) hi = I;
+    }
+    return hi - lo > 1e-3;
   }
 
   /* ------------------------------ DOM refs ------------------------------ */
@@ -532,6 +554,66 @@ if (typeof document !== 'undefined') (function () {
       }
     }
 
+    /*
+     * Geometric ψ / χ read-out, drawn only for a stationary state. The output
+     * point sits at azimuth 2ψ and elevation 2χ, so we draw the little angle
+     * arcs at the sphere's centre: ψ in the equator plane (from the H axis to
+     * the state's meridian) and χ in that meridian (from the equator up to the
+     * state vector). Just the arc + the Greek letter — the numbers live in the
+     * sidebar. The shared "foot" ray is ψ's second side and χ's first side.
+     */
+    function drawAngleGuides() {
+      const s = result.stokes;
+      const ARC_R = 0.42, LBL_R = 0.56, GUIDE = '79,70,229';
+      const phi2 = Math.atan2(s[1], s[0]);                       // 2ψ (azimuth)
+      const chi2 = Math.asin(Math.max(-1, Math.min(1, s[2])));   // 2χ (elevation)
+      const eqLen = Math.hypot(s[0], s[1]);
+      const fx = eqLen > 1e-6 ? s[0] / eqLen : 1;
+      const fy = eqLen > 1e-6 ? s[1] / eqLen : 0;
+      const drawPsi = eqLen > 1e-3 && Math.abs(phi2) > 3 * DEG;
+      const drawChi = Math.abs(chi2) > 3 * DEG;
+      if (!drawPsi && !drawChi) return;
+
+      function guideLine(pts, width) {
+        ctx.lineWidth = width;
+        ctx.lineCap = 'round';
+        for (let i = 0; i < pts.length - 1; i++) {
+          const a = P(pts[i]), b = P(pts[i + 1]);
+          ctx.strokeStyle = 'rgba(' + GUIDE + ',' + ((a[2] + b[2]) / 2 >= 0 ? 0.95 : 0.4) + ')';
+          ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke();
+        }
+      }
+      function arc(fn, ang) {
+        const n = Math.max(2, Math.round(Math.abs(ang) / (2 * DEG)));
+        const out = [];
+        for (let k = 0; k <= n; k++) out.push(fn(ang * k / n));
+        return out;
+      }
+      function guideLabel(text, p3) {
+        const p = P(p3), near = p[2] >= 0;
+        ctx.font = '700 15px ui-sans-serif, system-ui, sans-serif';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.lineWidth = 3.5; ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+        ctx.strokeText(text, p[0], p[1]);
+        ctx.fillStyle = 'rgba(' + GUIDE + ',' + (near ? 1 : 0.5) + ')';
+        ctx.fillText(text, p[0], p[1]);
+      }
+
+      guideLine([[0, 0, 0], [ARC_R * fx, ARC_R * fy, 0]], 1.5);   // shared foot ray
+      if (drawPsi) {
+        guideLine(arc(function (a) { return [ARC_R * Math.cos(a), ARC_R * Math.sin(a), 0]; }, phi2), 2);
+        const am = phi2 / 2;
+        guideLabel('ψ', [LBL_R * Math.cos(am), LBL_R * Math.sin(am), 0]);
+      }
+      if (drawChi) {
+        guideLine(arc(function (e) {
+          return [ARC_R * Math.cos(e) * fx, ARC_R * Math.cos(e) * fy, ARC_R * Math.sin(e)];
+        }, chi2), 2);
+        const em = chi2 / 2;
+        guideLabel('χ', [LBL_R * Math.cos(em) * fx, LBL_R * Math.cos(em) * fy, LBL_R * Math.sin(em)]);
+      }
+    }
+
     /* --- far hemisphere --- */
     drawGrid(false);
     drawTrace(false);
@@ -553,6 +635,11 @@ if (typeof document !== 'undefined') (function () {
     drawTrace(true);
     drawRotationAxis(true);
     drawLabels();
+
+    /* ψ / χ arcs only while the state is at rest (hidden during any motion) */
+    if (!state.scanAnim && !state.scanView && !state.transition && result.stokes) {
+      drawAngleGuides();
+    }
 
     /* --- markers always on top, so the far side stays visible --- */
     drawStateMarkersTop();
@@ -595,7 +682,7 @@ if (typeof document !== 'undefined') (function () {
     const samples = [];
     for (let k = 0; k <= SCAN_STEPS; k++) {
       const value = span * k / SCAN_STEPS;
-      samples.push(propagate(currentInputJones(), state.components,
+      samples.push(propagate(currentInputJones(), activeComponents(),
         { id: comp.id, param: param, value: value }));
     }
     return samples;
@@ -637,7 +724,10 @@ if (typeof document !== 'undefined') (function () {
       comp: comp, param: param,
       samples: samples,
       span: span,
-      isPolarizer: COMPONENT_DEFS[comp.type].kind === 'polarizer',
+      // a polarizer scan always earns the Malus plot — even a flat ½ on
+      // circular light is the expected, instructive result; for anything else
+      // show it only when the scan actually moves the transmitted intensity.
+      showIntensity: COMPONENT_DEFS[comp.type].kind === 'polarizer' || intensityVaries(samples),
       axisAt: scanAxisFn(comp, param, span),
       idx: 0,
       t0: null,                         // stamped on the first animation frame
@@ -678,10 +768,11 @@ if (typeof document !== 'undefined') (function () {
     legendStatus.textContent = running
       ? 'scanning 0° → ' + endTxt + ' …'
       : 'scan finished — shown at ' + endTxt + '. Change anything (or close) to return to the live view.';
-    if (anim.isPolarizer) {
-      // a polarizer projects rather than rotates — the interesting quantity is
-      // the transmitted intensity, so the colour key gives way to a Malus plot.
-      legendLabel.textContent = compTitle(anim.comp) + ' — output I / I₀ vs θ';
+    if (anim.showIntensity) {
+      // with a polarizer in the beam the interesting quantity is the
+      // transmitted intensity, so the colour key gives way to a Malus plot.
+      const sym = anim.param === 'phase' ? 'δ' : 'θ';
+      legendLabel.textContent = compTitle(anim.comp) + ' — output I / I₀ vs ' + sym;
       drawIntensityPlot(anim.samples, anim.span);
     } else {
       legendLabel.textContent = anim.label + ' [°]';
@@ -870,7 +961,7 @@ if (typeof document !== 'undefined') (function () {
       // ramp the new plate's retardance 0 → full: the marker follows the true
       // rotation about the element's eigen-axis (identity at scale 0).
       runTransition(function (f) {
-        return propagate(currentInputJones(), state.components,
+        return propagate(currentInputJones(), activeComponents(),
           { id: comp.id, param: 'retardScale', value: f });
       });
     } else if (moved) {
@@ -898,6 +989,44 @@ if (typeof document !== 'undefined') (function () {
     mutated();
   }
 
+  /* The chain as the beam would see it with `comp` forced into the beam — used
+     while animating a hide/show so the toggled element is present throughout. */
+  function chainWithToggled(comp) {
+    return state.components.filter(function (c) { return !c.hidden || c.id === comp.id; });
+  }
+
+  /*
+   * Hide (bypass) or show a component without touching its settings. The marker
+   * glides to its new home with the same short fly-in used when a component is
+   * dropped in: a retarder ramps its retardance between identity and full (so
+   * the marker follows the true rotation about its eigen-axis), anything else
+   * slides along the great circle between the two bench outputs.
+   */
+  function toggleHidden(comp) {
+    const def = COMPONENT_DEFS[comp.type];
+    const becomingHidden = !comp.hidden;
+    const fromResult = liveResult();            // bench output before the toggle
+    comp.hidden = becomingHidden;
+    renderChain();
+    clearScanState();                           // a beam change leaves any scan view
+    const toResult = liveResult();              // bench output after the toggle
+    const moved = fromResult.stokes && toResult.stokes &&
+      !stokesClose(fromResult.stokes, toResult.stokes);
+    if (moved && def.kind === 'retarder') {
+      const chain = chainWithToggled(comp);
+      const a = becomingHidden ? 1 : 0, b = becomingHidden ? 0 : 1;
+      runTransition(function (f) {
+        return propagate(currentInputJones(), chain,
+          { id: comp.id, param: 'retardScale', value: a + (b - a) * f });
+      });
+    } else if (moved) {
+      runTransition(function (f) { return slerpResult(fromResult, toResult, f); });
+    } else {
+      updateReadouts(toResult);
+      draw();
+    }
+  }
+
   function paramRow(comp, param, symbol, value) {
     const row = document.createElement('div');
     row.className = 'param-row';
@@ -921,7 +1050,10 @@ if (typeof document !== 'undefined') (function () {
     scanBtn.type = 'button';
     scanBtn.className = 'scan-btn';
     scanBtn.textContent = 'Scan';
-    scanBtn.title = 'Animate ' + (param === 'phase' ? 'δ from 0° to 360°' : 'θ from 0° to 180°') + ' (6 s)';
+    scanBtn.disabled = !!comp.hidden;
+    scanBtn.title = comp.hidden
+      ? 'Show this element to scan it'
+      : 'Animate ' + (param === 'phase' ? 'δ from 0° to 360°' : 'θ from 0° to 180°') + ' (6 s)';
     scanBtn.addEventListener('click', function () { startScan(comp, param); });
     row.append(lab, inp, unit, scanBtn);
     return row;
@@ -962,9 +1094,24 @@ if (typeof document !== 'undefined') (function () {
     icon.className = 'comp-icon';
     icon.innerHTML = iconSvg(comp.type);
 
+    if (comp.hidden) card.classList.add('bypassed');
+
     card.append(head, icon);
     card.append(paramRow(comp, 'angle', 'θ', comp.angle));
     if (def.variableDelta) card.append(paramRow(comp, 'phase', 'δ', comp.phase));
+
+    const foot = document.createElement('div');
+    foot.className = 'comp-foot';
+    const hideBtn = document.createElement('button');
+    hideBtn.type = 'button';
+    hideBtn.className = 'hide-btn';
+    hideBtn.textContent = comp.hidden ? 'Show' : 'Hide';
+    hideBtn.title = comp.hidden
+      ? 'Put this element back into the beam'
+      : 'Bypass this element — its settings are kept for when you show it again';
+    hideBtn.addEventListener('click', function () { toggleHidden(comp); });
+    foot.append(hideBtn);
+    card.append(foot);
     return card;
   }
 

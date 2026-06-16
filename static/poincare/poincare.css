@@ -448,6 +448,38 @@ select:focus, input[type="number"]:focus, button:focus-visible {
   cursor: pointer;
 }
 .scan-btn:hover { filter: brightness(1.1); }
+.scan-btn:disabled { opacity: 0.4; cursor: not-allowed; filter: none; }
+
+/* per-component Hide/Show toggle, pinned to the bottom of the card */
+.comp-foot { margin-top: 0.4rem; }
+.hide-btn {
+  display: block;
+  width: 100%;
+  font: 600 0.72rem/1 ui-sans-serif, system-ui, sans-serif;
+  color: var(--ink-soft);
+  background: #f1f4f8;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 0.34rem 0.5rem;
+  cursor: pointer;
+}
+.hide-btn:hover { border-color: var(--accent); color: var(--ink); }
+
+/* a bypassed element: greyed out and dashed, but its Show button stays bright */
+.comp-card.bypassed {
+  border-top-color: #c3ccd8;
+  border-top-style: dashed;
+  background: #fbfcfd;
+}
+.comp-card.bypassed .comp-head,
+.comp-card.bypassed .comp-icon,
+.comp-card.bypassed .param-row { opacity: 0.5; }
+.comp-card.bypassed .comp-icon { color: #9aa4b2; }
+.comp-card.bypassed .hide-btn {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: #eef0fd;
+}
 
 .drop-caret {
   flex: 0 0 4px;
