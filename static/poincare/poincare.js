@@ -253,13 +253,21 @@ if (typeof document !== 'undefined') (function () {
     return propagate(currentInputJones(), activeComponents(), null);
   }
 
-  /* True when at least one polarizer is currently in the beam — then the
-     interesting result of a scan is the transmitted intensity (Malus), not just
-     the path on the sphere, so the scan legend becomes an I/I₀ plot. */
-  function hasActivePolarizer() {
-    return state.components.some(function (c) {
-      return !c.hidden && COMPONENT_DEFS[c.type].kind === 'polarizer';
-    });
+  /* The transmitted intensity only moves across a scan when some polarizer
+     actually clips the scan-dependent beam — i.e. a polarizer sits at (or
+     downstream of) the scanned element. Everything from the scanned element
+     onward is otherwise unitary, so I/I₀ stays pinned and a Malus plot would be
+     a useless flat line. We read this straight off the computed samples, which
+     also correctly keeps the colour key for a polarizer that sits *before* the
+     scanned element, or one scanned on circular light (constant ½). */
+  function intensityVaries(samples) {
+    let lo = Infinity, hi = -Infinity;
+    for (let i = 0; i < samples.length; i++) {
+      const I = samples[i].intensity || 0;
+      if (I < lo) lo = I;
+      if (I > hi) hi = I;
+    }
+    return hi - lo > 1e-3;
   }
 
   /* ------------------------------ DOM refs ------------------------------ */
@@ -717,7 +725,7 @@ if (typeof document !== 'undefined') (function () {
       comp: comp, param: param,
       samples: samples,
       span: span,
-      showIntensity: hasActivePolarizer(),
+      showIntensity: intensityVaries(samples),
       axisAt: scanAxisFn(comp, param, span),
       idx: 0,
       t0: null,                         // stamped on the first animation frame
