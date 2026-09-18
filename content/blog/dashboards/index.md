@@ -4,7 +4,13 @@ date: 2026-09-18
 authors:
   - admin
 tags: []
-draft: true
+draft: false
+# Unlisted: rendered and reachable by direct link, but excluded from all lists,
+# feeds, the sitemap, and search. Remove `build:` and `private:` to publish.
+build:
+  list: never
+  render: always
+private: true
 ---
 
 "Is the experiment working right now?" 
