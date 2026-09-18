@@ -16,7 +16,4 @@ main:
   - name: Reading
     url: /reading/
     weight: 13
-  - name: Poincaré Lab
-    url: /poincare/
-    weight: 14
 
