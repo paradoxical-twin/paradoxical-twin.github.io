@@ -126,6 +126,22 @@ Override `.hbb-section` padding in `custom-styles.html`
 ### Finding theme defaults
 The compiled CSS is in `public/css/_entry.css` - search there to find what you're overriding.
 
+## Unlisted Pages
+
+To deploy a page that is reachable only by direct link (e.g. a draft shared for feedback), set in its front matter:
+
+```yaml
+draft: false
+build:
+  list: never      # excluded from the blog list, homepage collections, RSS, sitemap, prev/next
+  render: always
+private: true      # adds <meta name="robots" content="noindex"> AND data-pagefind-ignore on <body>
+```
+
+`private: true` alone only sets the robots meta; the Pagefind site search would still index the page. The `data-pagefind-ignore` part comes from the site's `layouts/baseof.html` override (one-line change over the theme's file). To publish the page normally, delete the `build:` and `private:` lines.
+
+Blog posts are leaf bundles (`content/blog/<slug>/index.md`). A post created as `_index.md` is treated as a section and renders with the list template instead of the article template.
+
 ## Useful Commands
 
 ```bash
