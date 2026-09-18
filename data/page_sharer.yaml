@@ -1,0 +1,28 @@
+# Social sharing links shown at the bottom of blog posts and publication pages.
+#
+# Site override of the Hugo Blox (blox-tailwind v0.9.0) default `data/page_sharer.yaml`.
+# The theme default also enables a WhatsApp button whose `whatsapp://` link is dead
+# outside a phone with WhatsApp installed; it is intentionally left out here.
+# Docs: https://docs.hugoblox.com/reference/page-sharer/
+
+links:
+  - id: x
+    url: 'https://twitter.com/intent/tweet?url={url}&text={title}'
+    title: X
+    icon: brands/x
+    enable: true
+  - id: facebook
+    url: 'https://www.facebook.com/sharer.php?u={url}&t={title}'
+    title: Facebook
+    icon: brands/facebook
+    enable: true
+  - id: email
+    url: 'mailto:?subject={title}&body={url}'
+    title: Email
+    icon: hero/at-symbol
+    enable: true
+  - id: linkedin
+    url: 'https://www.linkedin.com/shareArticle?url={url}&title={title}'
+    title: LinkedIn
+    icon: brands/linkedin
+    enable: true

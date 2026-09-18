@@ -37,6 +37,8 @@ This file injects inline `<style>` tags at the end of `<head>`, ensuring they ov
 │           └── custom-styles.html  # <-- PRIMARY CUSTOM CSS LOCATION
 ├── assets/
 │   └── scss/custom.scss       # SCSS file (NOT auto-processed, legacy)
+├── data/
+│   └── page_sharer.yaml       # Share buttons under posts/publications (overrides theme default; no WhatsApp)
 ├── config/                    # Hugo configuration
 ├── static/                    # Static assets (images, files)
 └── public/                    # Generated output (gitignored)
