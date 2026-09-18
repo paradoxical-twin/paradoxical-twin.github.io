@@ -15,7 +15,7 @@ private: true
 
 "Is the experiment working right now?" 
 
-"I think so. I have no clue."
+"I hope so. I have no clue."
 
 I am a professional physicist, doing experimental quantum optics research. Most of the time, I have setups connected to a variety of lasers, detectors, controllers, computers, and god-knows-what, doing something. Asking me whether it works would be a natural question. But almost always, I simply don't know.
 
