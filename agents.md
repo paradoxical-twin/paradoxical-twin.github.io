@@ -44,6 +44,14 @@ This file injects inline `<style>` tags at the end of `<head>`, ensuring they ov
 └── public/                    # Generated output (gitignored)
 ```
 
+## Dark Mode
+
+The theme switches light/dark by toggling the `dark` class on `<html>` (from the OS setting, `appearance.mode: system`). Key every dark-mode override to `html.dark`, **never** to `@media (prefers-color-scheme: dark)`: the two can disagree (no JS, a stored preference), and the result is dark text on a dark background.
+
+Dark-mode text colors are a small warm palette defined as `--dark-text-*` variables in `custom-styles.html`; the theme's gray `dark:text-*` classes and the Typography (`prose`) colors are mapped onto it there. Tailwind's CSS lives in cascade layers, so an unlayered rule beats every theme utility, hover states included. That is why the text-color overrides sit inside `@layer utilities`.
+
+`layouts/_partials/hooks/head-start/theme-preference.html` clears a light/dark choice stored while the theme toggle was still shown, since visitors can no longer change it.
+
 ## Hugo Blox Section System
 
 The homepage (`content/_index.md`) uses a block-based section system:
