@@ -8,13 +8,78 @@
     background-color: #fffcf9 !important;
   }
 
-  /* Dark mode */
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --hb-color-background: #1a1a1a !important;
+  /* Dark mode.
+     Keyed to the theme's `html.dark` class, NOT to `@media (prefers-color-scheme: dark)`:
+     the theme picks its text colors from that class, so the background must follow the
+     same switch, or the two can disagree (dark background under light-theme text). */
+  html.dark {
+    --hb-color-background: #1a1a1a !important;
+
+    /* Warm off-white text scale for the #1a1a1a background. No pure white, which glares
+       on dark backgrounds. Contrast: strong 14.2:1, text 11.7:1, muted 6.8:1, faint 4.7:1
+       (all pass WCAG AA; body text passes AAA). */
+    --dark-text-strong: #ece7e0; /* headings, links, bold, navigation */
+    --dark-text: #d9d3cb;        /* body copy */
+    --dark-text-muted: #a8a198;  /* metadata, captions, summaries */
+    --dark-text-faint: #8a847c;  /* dates in lists, list markers */
+    --dark-rule: #3a3a3a;        /* horizontal rules, quote and table borders */
+  }
+  html.dark, html.dark body {
+    background-color: #1a1a1a !important;
+  }
+
+  /* Dark-mode text colors. The (0,1,1) selectors below beat the theme's dark-mode colors
+     (0,1,0) but still lose to its hover styles (0,2,0 and up). For that to hold, each rule
+     must sit in the same cascade layer as the theme rule it overrides. */
+
+  /* The theme's navbar colors are unlayered */
+  html.dark :where(.navbar-brand, .nav-link) {
+    color: var(--dark-text-strong);
+  }
+
+  /* Tailwind utilities and Typography live in the `utilities` layer */
+  @layer utilities {
+    html.dark body {
+      color: var(--dark-text);
     }
-    html, body {
-      background-color: #1a1a1a !important;
+
+    /* Map the theme's gray dark-mode text classes onto the scale above */
+    html.dark :where([class~="dark:text-white"], [class~="dark:text-slate-100"], [class~="dark:text-gray-100"],
+                     [class~="dark:text-zinc-100"], [class~="dark:text-neutral-100"]) {
+      color: var(--dark-text-strong);
+    }
+    html.dark :where([class~="dark:text-slate-200"], [class~="dark:text-gray-200"], [class~="dark:text-zinc-200"],
+                     [class~="dark:text-neutral-200"], [class~="dark:text-slate-300"], [class~="dark:text-gray-300"],
+                     [class~="dark:text-zinc-300"], [class~="dark:text-neutral-300"]) {
+      color: var(--dark-text);
+    }
+    /* `dark:text-neutral` (no shade) is a theme typo on the prev/next arrows; it matches no
+       Tailwind class, which leaves those arrows near-invisible in dark mode */
+    html.dark :where([class~="dark:text-slate-400"], [class~="dark:text-gray-400"], [class~="dark:text-zinc-400"],
+                     [class~="dark:text-neutral-400"], [class~="dark:text-neutral"]) {
+      color: var(--dark-text-muted);
+    }
+    html.dark :where([class~="dark:text-slate-500"], [class~="dark:text-gray-500"], [class~="dark:text-zinc-500"],
+                     [class~="dark:text-neutral-500"]) {
+      color: var(--dark-text-faint);
+    }
+
+    /* Post bodies (Tailwind Typography's `dark:prose-invert`) */
+    html.dark :where(.prose) {
+      --tw-prose-body: var(--dark-text);
+      --tw-prose-lead: var(--dark-text);
+      --tw-prose-headings: var(--dark-text-strong);
+      --tw-prose-links: var(--dark-text-strong);
+      --tw-prose-bold: var(--dark-text-strong);
+      --tw-prose-quotes: var(--dark-text-strong);
+      --tw-prose-code: var(--dark-text-strong);
+      --tw-prose-counters: var(--dark-text-muted);
+      --tw-prose-captions: var(--dark-text-muted);
+      --tw-prose-bullets: var(--dark-text-faint);
+      --tw-prose-hr: var(--dark-rule);
+      --tw-prose-quote-borders: var(--dark-rule);
+      --tw-prose-th-borders: var(--dark-rule);
+      --tw-prose-td-borders: var(--dark-rule);
     }
   }
 

@@ -1,0 +1,7 @@
+{{/* With the light/dark toggle hidden (params.yaml: header.navbar.show_theme_chooser: false),
+     visitors can no longer change a choice stored while the toggle was still shown, and that
+     stale choice overrides their device setting. Drop it so the site follows the device
+     (params.yaml: appearance.mode). Runs before the theme's init script in hb-head.js. */}}
+{{ if not (site.Params.header.navbar.show_theme_chooser | default true) }}
+<script>try { localStorage.removeItem("wc-color-theme"); } catch (e) {}</script>
+{{ end }}
