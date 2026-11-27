@@ -5,6 +5,9 @@ authors:
   - admin
 tags: []
 draft: false
+
+image:
+  caption: 'Arnold Schönberg, *Winterszene*, 1910. Arnold Schönberg Center, Wien. [CC BY-SA 2.0](https://creativecommons.org/licenses/by-sa/2.0/)'
 ---
 
 The last months have been… not great for my level of cognitive dissonance. We are clearly at the start of the singularity, however defined. Riemann, Navier-Stokes, you know the drill, and the labs might be sitting on cryptography results that would have huge bearing on my entire field, not to mention general society and its technological infrastructure. If not yet, at this rate they probably will, soon. But I spend my days touching grass, i.e. going to work and living my private life as if nothing changed.
